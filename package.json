@@ -1,16 +1,15 @@
 {
-  "name": "vite-vanilla-ts-lib-starter",
-  "private": true,
-  "version": "0.0.2",
-  "main": "./dist/vite-vanilla-ts-lib-starter.cjs",
-  "module": "./dist/vite-vanilla-ts-lib-starter.mjs",
+  "name": "rhf-conditional-logic",
+  "version": "0.0.1",
+  "main": "./dist/rhf-conditional-logic.cjs",
+  "module": "./dist/rhf-conditional-logic.mjs",
   "exports": {
     ".": {
-      "require": "./dist/vite-vanilla-ts-lib-starter.cjs",
-      "import": "./dist/vite-vanilla-ts-lib-starter.mjs"
+      "require": "./dist/rhf-conditional-logic.cjs",
+      "import": "./dist/rhf-conditional-logic.mjs"
     }
   },
-  "types": "./dist/vite-vanilla-ts-lib-starter.d.ts",
+  "types": "./dist/rhf-conditional-logic.d.ts",
   "scripts": {
     "dev": "vite --host",
     "build": "rimraf dist && tsc && vite build && dts-bundle-generator --config ./dts-bundle-generator.config.ts",
