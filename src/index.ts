@@ -6,12 +6,12 @@ import {
   useWatch,
 } from "react-hook-form";
 import { objectKeys } from "ts-extras";
-import { unset, cloneDeep } from "lodash-es";
 import { FieldConditions } from "./types";
 import {
   getConditionalLogic,
   getConditionalLogicWithDependencies,
 } from "./utils/conditional-logic";
+import { deleteByPath } from "./utils/delete-by-path";
 
 //
 // Public API
@@ -63,12 +63,12 @@ export function pruneHiddenFields<
   );
 
   // Remove hidden values
-  const values = cloneDeep(getValues());
+  const values = JSON.parse(JSON.stringify(getValues()));
   for (const fieldName in formFieldVisibility) {
     const isHidden =
       formFieldVisibility[fieldName as TFieldNames[number]] === false;
     if (isHidden) {
-      unset(values, fieldName);
+      deleteByPath(values, fieldName);
     }
   }
   return values;

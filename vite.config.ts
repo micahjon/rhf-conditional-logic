@@ -32,6 +32,19 @@ module.exports = defineConfig({
       formats,
       fileName: (format) => fileName[format],
     },
+    rollupOptions: {
+      // make sure to externalize deps that shouldn't be bundled
+      // into your library
+      external: ['react', 'react-hook-form'], 
+      output: {
+        // Provide global variables to use in the UMD build
+        // for externalized deps
+        globals: {
+          react: 'React',
+          'react-hook-form': 'ReactHookForm'
+        },
+      },
+    },
   },
   test: {
 
