@@ -1,6 +1,6 @@
 # Conditional Logic for React Hook Forms
 
-A tiny library that makes it easy to define conditional logic in one place and expose it logic in components for conditional rendering, smarter validation & only submitting visible values.
+A tiny library that makes it easy to define conditional logic in one place and expose it in components for conditional rendering, smarter validation & only submitting visible values.
 
 ## Features
 
