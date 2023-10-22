@@ -1,61 +1,16 @@
-# rhf-conditional-logic
+# Conditional Logic for React Hook Forms
 
-The starter is built on top of Vite 4.x and prepared for writing libraries in TypeScript. It generates a hybrid package - both support for CommonJS and ESM modules.
+A tiny library that makes it easy to define conditional logic in one place and expose it logic in components for conditional rendering, smarter validation & only submitting visible values.
 
 ## Features
 
-- Hybrid support - CommonJS and ESM modules
-- IIFE bundle for direct browser support without bundler
-- Typings bundle
-- ESLint - scripts linter
-- Stylelint - styles linter
-- Prettier - formatter
-- Vitest - test framework
-- Husky + lint-staged - pre-commit git hook set up for formatting
+- Define conditional logic (whether to show/hide field) in a single typed config object
+- `useConditionalLogic()` hook returns visibility of passed fields and automatically detects & watches dependencies with `useWatch()`
+- `pruneHiddenFields()` util lets you remove hidden fields from `getValues()` before validation and after submission.
+  - This lets you track hidden field values (`shouldUnregister = false`) for a great UX but not have to worry about hidden fields showing up in `errors` or preventing submission entirely.
+- Supports defining a single condition for all items in an array using `#` as a wildcard index
+- Fully typed with Typescript, get autocompletion & validation based on your Zod schema (or whatever validator you're using)
 
-## GitHub Template
+## Show me the code:
 
-This is a template repo. Click the green [Use this template](https://github.com/kbysiec/rhf-conditional-logic/generate) button to get started.
-
-## Clone to local
-
-If you prefer to do it manually with the cleaner git history
-
-```bash
-git clone https://github.com/kbysiec/rhf-conditional-logic.git
-cd rhf-conditional-logic
-npm i
-```
-
-## Checklist
-
-When you use this template, update the following:
-
-- Remove `.git` directory and run `git init` to clean up the history
-- Change the name in `package.json` - it will be the name of the IIFE bundle global variable and bundle files name (`.cjs`, `.mjs`, `.iife.js`, `d.ts`)
-- Change the author name in `LICENSE`
-- Clean up the `README` and `CHANGELOG` files
-
-And, enjoy :)
-
-## Usage
-
-The starter contains the following scripts:
-
-- `dev` - starts dev server
-- `build` - generates the following bundles: CommonJS (`.cjs`) ESM (`.mjs`) and IIFE (`.iife.js`). The name of bundle is automatically taken from `package.json` name property
-- `test` - starts vitest and runs all tests
-- `test:coverage` - starts vitest and run all tests with code coverage report
-- `lint:scripts` - lint `.ts` files with eslint
-- `lint:styles` - lint `.css` and `.scss` files with stylelint
-- `format:scripts` - format `.ts`, `.html` and `.json` files with prettier
-- `format:styles` - format `.cs` and `.scss` files with stylelint
-- `format` - format all with prettier and stylelint
-- `prepare` - script for setting up husky pre-commit hook
-- `uninstall-husky` - script for removing husky from repository
-
-## Acknowledgment
-
-If you found it useful somehow, I would be grateful if you could leave a star in the project's GitHub repository.
-
-Thank you.
+...
