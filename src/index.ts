@@ -1,6 +1,6 @@
 import {
   Control,
-  FieldPath as RhfFieldPath, // Clarify that it's not our modified version
+  FieldPath,
   FieldValues,
   UseFormGetValues,
   useWatch,
@@ -27,7 +27,7 @@ import { deleteByPath } from "./utils/delete-by-path";
  */
 export function useConditionalLogic<
   TFieldValues extends FieldValues,
-  TFieldNames extends RhfFieldPath<TFieldValues>[],
+  TFieldNames extends FieldPath<TFieldValues>[],
 >(
   fieldNamePaths: readonly [...TFieldNames],
   conditions: FieldConditions<TFieldValues>,
@@ -50,7 +50,7 @@ export function useConditionalLogic<
  */
 export function pruneHiddenFields<
   TFieldValues extends FieldValues,
-  TFieldNames extends RhfFieldPath<TFieldValues>[],
+  TFieldNames extends FieldPath<TFieldValues>[],
 >(
   conditions: FieldConditions<TFieldValues>,
   getValues: UseFormGetValues<TFieldValues>

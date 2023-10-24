@@ -1,4 +1,4 @@
-import { FieldPath as RhfFieldPath, FieldValues } from "react-hook-form";
+import { FieldPath, FieldValues } from "react-hook-form";
 import { FieldPathPlusHash } from "../types";
 import { hashIndexRegex, integerRegex } from "./regex";
 
@@ -6,7 +6,7 @@ import { hashIndexRegex, integerRegex } from "./regex";
 // that matches a particular field name path
 export function getConditionKeyWithHashThatMatchesPath<
   TFieldValues extends FieldValues,
-  TFieldName extends RhfFieldPath<TFieldValues>,
+  TFieldName extends FieldPath<TFieldValues>,
 >(
   pathWithIndices: TFieldName,
   conditionKeysWithHashes: FieldPathPlusHash<TFieldValues>[]
@@ -51,14 +51,14 @@ export function getConditionKeyWithHashThatMatchesPath<
 export function swapOutHashesInFieldPath<
   TFieldValues extends FieldValues,
   TFieldNameRequested extends FieldPathPlusHash<TFieldValues>,
-  TFieldNameConditional extends RhfFieldPath<TFieldValues>,
+  TFieldNameConditional extends FieldPath<TFieldValues>,
 >(
   requestedFieldPath: TFieldNameRequested,
   conditionalFieldPath: TFieldNameConditional
 ) {
   // No hashes to replace with indices
   if (!hashIndexRegex.test(requestedFieldPath)) {
-    return requestedFieldPath as RhfFieldPath<TFieldValues>;
+    return requestedFieldPath as FieldPath<TFieldValues>;
   }
 
   const conditionalFieldPathParts = conditionalFieldPath.split(".");
@@ -87,5 +87,5 @@ export function swapOutHashesInFieldPath<
       hasDiverged = true;
       return requestedPart;
     })
-    .join(".") as RhfFieldPath<TFieldValues>;
+    .join(".") as FieldPath<TFieldValues>;
 }

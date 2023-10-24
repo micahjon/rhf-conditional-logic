@@ -1,8 +1,4 @@
-import {
-  FieldPath as RhfFieldPath, // Clarify that it's not our modified version
-  FieldValues,
-  UseFormGetValues,
-} from "react-hook-form";
+import { FieldPath, FieldValues, UseFormGetValues } from "react-hook-form";
 import { objectFromEntries, objectKeys } from "ts-extras";
 import { FieldConditions, FieldPathPlusHash, GetValues } from "../types";
 import { hashIndexRegex, integerIndexRegex } from "./regex";
@@ -14,7 +10,7 @@ import {
 // Utility to compute conditional logic for one or more fields and track dependencies
 export function getConditionalLogicWithDependencies<
   TFieldValues extends FieldValues,
-  TFieldNames extends RhfFieldPath<TFieldValues>[],
+  TFieldNames extends FieldPath<TFieldValues>[],
 >(
   formFieldPaths: readonly [...TFieldNames],
   conditions: FieldConditions<TFieldValues>,
@@ -22,10 +18,10 @@ export function getConditionalLogicWithDependencies<
 ) {
   // Whenever a user looks up a value in a conditional logic function, we track
   // its field name as a depedency of the conditional field
-  const dependencies: Set<RhfFieldPath<TFieldValues>> = new Set();
+  const dependencies: Set<FieldPath<TFieldValues>> = new Set();
   function getDependencyValue<
-    TFieldName extends RhfFieldPath<TFieldValues>,
-    TFieldNames extends RhfFieldPath<TFieldValues>[],
+    TFieldName extends FieldPath<TFieldValues>,
+    TFieldNames extends FieldPath<TFieldValues>[],
   >(fieldOrFields: TFieldName | readonly [...TFieldNames]) {
     if (!fieldOrFields) {
       throw new Error(
@@ -58,7 +54,7 @@ export function getConditionalLogicWithDependencies<
 // Utility to compute conditional logic for a subset of fields
 export function getConditionalLogic<
   TFieldValues extends FieldValues,
-  TFieldNames extends RhfFieldPath<TFieldValues>[],
+  TFieldNames extends FieldPath<TFieldValues>[],
 >(
   formFieldPaths: readonly [...TFieldNames],
   conditions: FieldConditions<TFieldValues>,

@@ -10,7 +10,7 @@ import {
  * OVERVIEW
  *
  * The vast majority of the types used in this project are from
- * React Hook Form verbatum. However, we make a few modificaitons
+ * React Hook Form verbatum. However, we make a few modifications
  * & additions:
  *
  * - Define FieldConditions, the type for the object where the library
@@ -25,6 +25,10 @@ import {
  * - Tweak some types to allow subbing in a hash (#) for an index
  *   in a path. The hash acts like a wildcard index, matching the
  *   "current" index of the array item being looked up.
+ *
+ * - All modified React Hook Form types & their derivates are suffixed
+ *   with "CL" to distinguish them from the originals
+ *
  */
 
 /**
@@ -57,9 +61,9 @@ export type GetValues<TFieldValues extends FieldValues> = {
    *
    * @returns the single field value
    */
-  <TFieldName extends FieldPath<TFieldValues>>(
+  <TFieldName extends FieldPathCL<TFieldValues>>(
     name: TFieldName
-  ): FieldPathValue<TFieldValues, TFieldName>;
+  ): FieldPathValueCL<TFieldValues, TFieldName>;
   /**
    * Get an array of field values.
    *
@@ -70,16 +74,16 @@ export type GetValues<TFieldValues extends FieldValues> = {
    *
    * @returns An array of field values
    */
-  <TFieldNames extends FieldPath<TFieldValues>[]>(
+  <TFieldNames extends FieldPathCL<TFieldValues>[]>(
     names: readonly [...TFieldNames]
-  ): [...FieldPathValues<TFieldValues, TFieldNames>];
+  ): [...FieldPathValuesCL<TFieldValues, TFieldNames>];
 };
 
 /**
  * Export our custom version of FieldPath that allows for hashes
  */
 export type FieldPathPlusHash<TFieldValues extends FieldValues> =
-  Path<TFieldValues>;
+  PathCL<TFieldValues>;
 
 /**
  * Helper type for recursively constructing paths through a type.
@@ -102,9 +106,9 @@ export type FieldPathPlusHash<TFieldValues extends FieldValues> =
  * treating "guests.#.wine", but then there wouldn't be an easy way to target
  * only the first guest.
  *
- * See {@link Path}
+ * See {@link PathCL}
  */
-type PathImpl<K extends string | number, V, TraversedTypes> = V extends
+type PathImplCL<K extends string | number, V, TraversedTypes> = V extends
   | Primitive
   | BrowserNativeObject
   ? `${K}`
@@ -116,13 +120,13 @@ type PathImpl<K extends string | number, V, TraversedTypes> = V extends
   : K extends number
   ?
       | `${K}`
-      | `${K}.${PathInternal<V, TraversedTypes | V>}`
+      | `${K}.${PathInternalCL<V, TraversedTypes | V>}`
       // Note: this is a departure from React Hook Form's types. We allow
       // user to use the hash to mean "the current index", so they can
       // define a single condition for all possible indices in an array.
       | `#`
-      | `#.${PathInternal<V, TraversedTypes | V>}`
-  : `${K}` | `${K}.${PathInternal<V, TraversedTypes | V>}`;
+      | `#.${PathInternalCL<V, TraversedTypes | V>}`
+  : `${K}` | `${K}.${PathInternalCL<V, TraversedTypes | V>}`;
 
 /**
  * Type to evaluate the type which the given path points to.
@@ -138,15 +142,15 @@ type PathImpl<K extends string | number, V, TraversedTypes> = V extends
  * uses a path with a hash, this doesn't resolve to never.
  * Add conditions both for "#.child" and "parent.#"
  */
-export type PathValue<T, P extends Path<T> | ArrayPath<T>> = T extends any
+export type PathValueCL<T, P extends PathCL<T> | ArrayPath<T>> = T extends any
   ? P extends `${infer K}.${infer R}`
     ? K extends keyof T
-      ? R extends Path<T[K]>
-        ? PathValue<T[K], R>
+      ? R extends PathCL<T[K]>
+        ? PathValueCL<T[K], R>
         : never
       : K extends `${ArrayKey}` | "#" // Treat hash as an array index
       ? T extends ReadonlyArray<infer V>
-        ? PathValue<V, R & Path<V>>
+        ? PathValueCL<V, R & PathCL<V>>
         : never
       : never
     : P extends keyof T
@@ -241,16 +245,16 @@ type AnyIsEqual<T1, T2> = T1 extends T2
  * Helper type for recursively constructing paths through a type.
  * This obscures the internal type param TraversedTypes from exported contract.
  *
- * See {@link Path}
+ * See {@link PathCL}
  */
-type PathInternal<T, TraversedTypes = T> = T extends ReadonlyArray<infer V>
+type PathInternalCL<T, TraversedTypes = T> = T extends ReadonlyArray<infer V>
   ? IsTuple<T> extends true
     ? {
-        [K in TupleKeys<T>]-?: PathImpl<K & string, T[K], TraversedTypes>;
+        [K in TupleKeys<T>]-?: PathImplCL<K & string, T[K], TraversedTypes>;
       }[TupleKeys<T>]
-    : PathImpl<ArrayKey, V, TraversedTypes>
+    : PathImplCL<ArrayKey, V, TraversedTypes>
   : {
-      [K in keyof T]-?: PathImpl<K & string, T[K], TraversedTypes>;
+      [K in keyof T]-?: PathImplCL<K & string, T[K], TraversedTypes>;
     }[keyof T];
 
 /**
@@ -263,12 +267,13 @@ type PathInternal<T, TraversedTypes = T> = T extends ReadonlyArray<infer V>
  */
 // We want to explode the union type and process each individually
 // so assignable types don't leak onto the stack from the base.
-export type Path<T> = T extends any ? PathInternal<T> : never;
+export type PathCL<T> = T extends any ? PathInternalCL<T> : never;
 
 /**
- * See {@link Path}
+ * See {@link PathCL}
  */
-export type FieldPath<TFieldValues extends FieldValues> = Path<TFieldValues>;
+export type FieldPathCL<TFieldValues extends FieldValues> =
+  PathCL<TFieldValues>;
 
 /**
  * Helper type for recursively constructing paths through a type.
@@ -328,12 +333,12 @@ type ArrayPathInternal<T, TraversedTypes = T> = T extends ReadonlyArray<infer V>
 export type ArrayPath<T> = T extends any ? ArrayPathInternal<T> : never;
 
 /**
- * See {@link PathValue}
+ * See {@link PathValueCL}
  */
-export type FieldPathValue<
+export type FieldPathValueCL<
   TFieldValues extends FieldValues,
-  TFieldPath extends FieldPath<TFieldValues>,
-> = PathValue<TFieldValues, TFieldPath>;
+  TFieldPath extends FieldPathCL<TFieldValues>,
+> = PathValueCL<TFieldValues, TFieldPath>;
 
 /**
  * Type to evaluate the type which the given paths point to.
@@ -345,13 +350,15 @@ export type FieldPathValue<
  *   = [{bar: string}, string]
  * ```
  */
-export type FieldPathValues<
+export type FieldPathValuesCL<
   TFieldValues extends FieldValues,
-  TPath extends FieldPath<TFieldValues>[] | readonly FieldPath<TFieldValues>[],
+  TPath extends
+    | FieldPathCL<TFieldValues>[]
+    | readonly FieldPathCL<TFieldValues>[],
   // eslint-disable-next-line @typescript-eslint/ban-types
 > = {} & {
-  [K in keyof TPath]: FieldPathValue<
+  [K in keyof TPath]: FieldPathValueCL<
     TFieldValues,
-    TPath[K] & FieldPath<TFieldValues>
+    TPath[K] & FieldPathCL<TFieldValues>
   >;
 };
