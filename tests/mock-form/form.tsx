@@ -1,27 +1,51 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
-import { useFieldArray, useForm } from "react-hook-form";
-import { useConditionalLogic } from "../../src";
+import {
+  FieldErrors,
+  FieldPath,
+  FormProvider,
+  useFieldArray,
+  useForm,
+  useFormContext,
+} from "react-hook-form";
+import { pruneHiddenFields, useConditionalLogic } from "../../src";
 import {
   BlankFormSchema,
   FormSchema,
   conditions,
+  formSchema,
   getDefaultValues,
 } from "./schema";
+import { get } from "lodash-es";
 
 export function Form() {
+  const formMethods = useForm<BlankFormSchema>({
+    defaultValues: getDefaultValues(),
+    resolver: function (_: BlankFormSchema, ...otherArgs) {
+      const prunedValues = pruneHiddenFields(conditions, formMethods.getValues);
+      try {
+        formSchema.parse(prunedValues);
+      } catch (error) {
+        console.log("Pre-validation", {
+          all: formMethods.getValues(),
+          pruned: prunedValues,
+        });
+        console.log("Failed validation", error);
+      }
+      return zodResolver(formSchema)(prunedValues, ...otherArgs);
+    },
+  });
   const {
     handleSubmit,
     getValues,
     control,
     register,
     formState: { errors },
-  } = useForm<BlankFormSchema>({
-    defaultValues: getDefaultValues(),
-  });
-  const onSubmit = data => console.log(data as FormSchema);
+  } = formMethods;
 
-  // Expose on window for vitest to do type-checking
-  Object.assign(window, { getValues });
+  const onSubmit = data => {
+    console.log("Successfully submitted", data as FormSchema);
+  };
 
   const { otherCaterer: showOtherCaterer } = useConditionalLogic(
     ["otherCaterer"],
@@ -37,67 +61,187 @@ export function Form() {
   } = useFieldArray({
     control,
     name: "guests",
-    rules: { minLength: 1 },
   });
 
+  console.log({ errors });
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <label>
-        Name
-        <input type="text" {...register("contactName")} />
-        {errors.contactName && <span>{errors.contactName.message}</span>}
-      </label>
-      <label>
-        Email
-        <input type="email" {...register("contactEmail")} />
-        {errors.contactEmail && <span>{errors.contactEmail.message}</span>}
-      </label>
-      <fieldset>
-        <legend>Select Caterer</legend>
+    <FormProvider {...formMethods}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <label>
-          <input
-            {...register("caterer")}
-            type="radio"
-            value="Elephants Catering"
-          />
-          Elephants Catering
+          Name
+          <input type="text" {...register("contactName")} />
+          <FieldError errors={errors} path="contactName" />
         </label>
         <label>
-          <input {...register("caterer")} type="radio" value="Delta BBQ" />
-          Delta BBQ
+          Email
+          <input type="email" {...register("contactEmail")} />
+          <FieldError errors={errors} path="contactEmail" />
         </label>
-        <label>
-          <input {...register("caterer")} type="radio" value="Other" />
-          Other
-        </label>
-      </fieldset>
-      {showOtherCaterer && (
-        <label>
-          Other Caterer
-          <input type="text" {...register("otherCaterer")} />
-          {errors.otherCaterer && <span>{errors.otherCaterer.message}</span>}
-        </label>
-      )}
-      <fieldset>
-        <label>List Guests</label>
-        {guestFields.map((field, i) => {
-          return <Guest key={field.id} remove={() => removeGuestByIndex(i)} />;
-        })}
-        <button onClick={() => appendGuest(getDefaultValues().guests[0])}>
-          Add Guest
-        </button>
-      </fieldset>
-    </form>
+        <fieldset>
+          <legend>Select Caterer</legend>
+          <label>
+            <input
+              {...register("caterer")}
+              type="radio"
+              value="Elephants Catering"
+            />
+            Elephants Catering
+          </label>
+          <label>
+            <input {...register("caterer")} type="radio" value="Delta BBQ" />
+            Delta BBQ
+          </label>
+          <label>
+            <input {...register("caterer")} type="radio" value="Other" />
+            Other
+          </label>
+          <FieldError errors={errors} path="caterer" />
+        </fieldset>
+        {showOtherCaterer && (
+          <label>
+            Other Caterer
+            <input type="text" {...register("otherCaterer")} />
+            <FieldError errors={errors} path="otherCaterer" />
+          </label>
+        )}
+        <fieldset>
+          <label>List Guests</label>
+          {guestFields.map((field, i) => (
+            <Guest
+              key={field.id}
+              index={i}
+              remove={() => removeGuestByIndex(i)}
+            />
+          ))}
+          <button
+            onClick={() => appendGuest(getDefaultValues().guests[0])}
+            style={{
+              height: "36px",
+              width: "auto",
+              padding: "4px 1rem",
+              float: "right",
+            }}
+          >
+            Add Guest
+          </button>
+          <FieldError errors={errors} path="guests" />
+        </fieldset>
+
+        <button type="submit">Submit</button>
+      </form>
+    </FormProvider>
   );
 }
 
-function Guest({ remove }: { remove: () => void }) {
+function Guest({ index, remove }: { index: number; remove: () => void }) {
+  const {
+    register,
+    getValues,
+    control,
+    formState: { errors },
+  } = useFormContext<BlankFormSchema>();
+  const prefix = `guests.${index}` as const;
+
+  const conditionResult = useConditionalLogic(
+    [`${prefix}.wine`],
+    conditions,
+    getValues,
+    control
+  );
+  const showWineField = conditionResult[`${prefix}.wine`];
+
   return (
-    <div>
-      ...
-      <button onClick={() => remove()} style={{ padding: "4px" }}>
-        X
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
+        border: "1px solid #ccc",
+        borderRadius: "8px",
+        padding: "1rem 1rem 0",
+        marginBottom: "1rem",
+      }}
+    >
+      <label>
+        Name
+        <input type="text" {...register(`${prefix}.name`)} />
+        <FieldError errors={errors} path={`${prefix}.name`} />
+      </label>
+      <fieldset>
+        <legend>Select Age</legend>
+        <label>
+          <input {...register(`${prefix}.age`)} type="radio" value="0-5" />
+          Under 5
+        </label>
+        <label>
+          <input {...register(`${prefix}.age`)} type="radio" value="6-12" />6 -
+          12
+        </label>
+        <label>
+          <input {...register(`${prefix}.age`)} type="radio" value="13-20" />
+          13 - 20
+        </label>
+        <label>
+          <input {...register(`${prefix}.age`)} type="radio" value="21+" />
+          21+
+        </label>
+        <FieldError errors={errors} path={`${prefix}.age`} />
+      </fieldset>
+      {showWineField && (
+        <fieldset>
+          <legend>Wine Pairing</legend>
+          <label>
+            <input {...register(`${prefix}.wine`)} type="radio" value="Red" />
+            Red
+          </label>
+          <label>
+            <input {...register(`${prefix}.wine`)} type="radio" value="White" />
+            White
+          </label>
+          <label>
+            <input
+              {...register(`${prefix}.wine`)}
+              type="radio"
+              value="Rosé on ice"
+            />
+            Rosé on ice
+          </label>
+          <label>
+            <input {...register(`${prefix}.wine`)} type="radio" value="None" />
+            None
+          </label>
+          <FieldError errors={errors} path={`${prefix}.wine`} />
+        </fieldset>
+      )}
+      <button
+        onClick={() => remove()}
+        style={{
+          height: "36px",
+          width: "auto",
+          padding: "4px 1rem",
+        }}
+      >
+        Remove Guest
       </button>
     </div>
   );
+}
+
+function FieldError({
+  errors,
+  path,
+}: {
+  errors: FieldErrors<BlankFormSchema>;
+  path: FieldPath<BlankFormSchema>;
+}) {
+  const error = get(errors, path);
+  if (error && error.type && error.message) {
+    return (
+      <div style={{ color: "crimson", marginBottom: "1rem" }}>
+        {error.message}
+      </div>
+    );
+  }
+  return null;
 }

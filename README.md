@@ -14,3 +14,7 @@ A tiny library that makes it easy to define conditional logic in one place and e
 ## Show me the code:
 
 ...
+
+## Future improvements
+
+Update `useConditionalLogic` signature to allow for single field (instead of array). Maybe add provider option so we only have one param?
