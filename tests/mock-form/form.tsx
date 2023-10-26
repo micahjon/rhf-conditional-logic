@@ -23,15 +23,6 @@ export function Form() {
     defaultValues: getDefaultValues(),
     resolver: function (_: BlankFormSchema, ...otherArgs) {
       const prunedValues = pruneHiddenFields(conditions, formMethods.getValues);
-      try {
-        formSchema.parse(prunedValues);
-      } catch (error) {
-        console.log("Pre-validation", {
-          all: formMethods.getValues(),
-          pruned: prunedValues,
-        });
-        console.log("Failed validation", error);
-      }
       return zodResolver(formSchema)(prunedValues, ...otherArgs);
     },
   });
@@ -63,7 +54,7 @@ export function Form() {
     name: "guests",
   });
 
-  console.log({ errors });
+  // console.log({ errors });
 
   return (
     <FormProvider {...formMethods}>
