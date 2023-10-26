@@ -13,10 +13,9 @@
   "scripts": {
     "dev": "vite --host",
     "build": "rimraf dist && tsc && vite build && dts-bundle-generator --config ./dts-bundle-generator.config.ts",
-    "test": "vitest",
-    "test:coverage": "vitest --coverage",
+    "test": "npx playwright test",
     "lint:scripts": "eslint . --ext .ts",
-    "format": "prettier . --write",
+    "format:scripts": "prettier . --write",
     "prepare": "husky install && husky set .husky/pre-commit 'npx lint-staged' && git add .husky/pre-commit",
     "uninstall-husky": "npm uninstall husky --no-save && git config --unset core.hooksPath && npx rimraf .husky"
   },
