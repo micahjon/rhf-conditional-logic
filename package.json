@@ -15,9 +15,7 @@
     "build": "rimraf dist && tsc && vite build && dts-bundle-generator --config ./dts-bundle-generator.config.ts",
     "test": "npx playwright test",
     "lint:scripts": "eslint . --ext .ts",
-    "format:scripts": "prettier . --write",
-    "prepare": "husky install && husky set .husky/pre-commit 'npx lint-staged' && git add .husky/pre-commit",
-    "uninstall-husky": "npm uninstall husky --no-save && git config --unset core.hooksPath && npx rimraf .husky"
+    "format:scripts": "prettier . --write"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -37,7 +35,6 @@
     "eslint": "^8.46.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
-    "husky": "^8.0.3",
     "lint-staged": "^13.2.3",
     "lodash-es": "^4.17.21",
     "postcss": "^8.4.27",
