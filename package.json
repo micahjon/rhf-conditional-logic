@@ -1,12 +1,18 @@
 {
   "name": "rhf-conditional-logic",
-  "version": "0.0.1",
+  "version": "0.0.1-alpha.1",
   "main": "./dist/rhf-conditional-logic.cjs",
   "module": "./dist/rhf-conditional-logic.mjs",
   "exports": {
     ".": {
-      "require": "./dist/rhf-conditional-logic.cjs",
-      "import": "./dist/rhf-conditional-logic.mjs"
+      "require": {
+        "default": "./dist/rhf-conditional-logic.cjs",
+        "types": "./dist/rhf-conditional-logic.d.ts"
+      },
+      "import": {
+        "default": "./dist/rhf-conditional-logic.mjs",
+        "types": "./dist/rhf-conditional-logic.d.ts"
+      }
     }
   },
   "types": "./dist/rhf-conditional-logic.d.ts",
@@ -15,7 +21,8 @@
     "build": "rimraf dist && tsc && vite build && dts-bundle-generator --config ./dts-bundle-generator.config.ts",
     "test": "npx playwright test",
     "lint:scripts": "eslint . --ext .ts",
-    "format:scripts": "prettier . --write"
+    "format:scripts": "prettier . --write",
+    "pub": "npm publish"
   },
   "dependencies": {
     "react": "^18.2.0",
