@@ -1,6 +1,6 @@
 {
   "name": "rhf-conditional-logic",
-  "version": "0.0.1-alpha.1",
+  "version": "0.0.1-alpha.2",
   "main": "./dist/rhf-conditional-logic.cjs",
   "module": "./dist/rhf-conditional-logic.mjs",
   "exports": {
@@ -19,7 +19,8 @@
   "scripts": {
     "dev": "vite --host",
     "build": "rimraf dist && tsc && vite build && dts-bundle-generator --config ./dts-bundle-generator.config.ts",
-    "test": "npx playwright test",
+    "test:e2e": "npx playwright test",
+    "test:unit": "vitest",
     "lint:scripts": "eslint . --ext .ts",
     "format:scripts": "prettier . --write",
     "pub": "npm publish"
@@ -51,7 +52,7 @@
     "ts-node": "^10.9.1",
     "typescript": "^5.1.6",
     "vite": "^4.4.9",
-    "vitest": "^0.34.1",
+    "vitest": "^0.34.6",
     "zod": "^3.22.4"
   }
 }

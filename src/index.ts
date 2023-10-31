@@ -11,7 +11,7 @@ import {
   getConditionalLogic,
   getConditionalLogicWithDependencies,
 } from "./utils/conditional-logic";
-import { deleteByPath } from "./utils/delete-by-path";
+import { deleteByPathWithoutMutation } from "./utils/delete-by-path";
 
 //
 // Public API
@@ -63,12 +63,12 @@ export function pruneHiddenFields<
   );
 
   // Remove hidden values
-  const values = JSON.parse(JSON.stringify(getValues()));
+  const values = getValues();
   for (const fieldName in formFieldVisibility) {
     const isHidden =
       formFieldVisibility[fieldName as TFieldNames[number]] === false;
     if (isHidden) {
-      deleteByPath(values, fieldName);
+      deleteByPathWithoutMutation(values, fieldName);
     }
   }
   return values;
