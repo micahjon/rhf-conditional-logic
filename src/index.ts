@@ -63,12 +63,12 @@ export function pruneHiddenFields<
   );
 
   // Remove hidden values
-  const values = getValues();
+  let values = getValues();
   for (const fieldName in formFieldVisibility) {
     const isHidden =
       formFieldVisibility[fieldName as TFieldNames[number]] === false;
     if (isHidden) {
-      deleteByPathWithoutMutation(values, fieldName);
+      values = deleteByPathWithoutMutation(values, fieldName) as TFieldValues;
     }
   }
   return values;

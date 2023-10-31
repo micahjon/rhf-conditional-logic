@@ -34,8 +34,11 @@ export function Form() {
     formState: { errors },
   } = formMethods;
 
-  const onSubmit = data => {
-    console.log("Successfully submitted", data as FormSchema);
+  const onSubmit = () => {
+    console.log(
+      "Successfully submitted",
+      pruneHiddenFields(conditions, formMethods.getValues) as FormSchema
+    );
   };
 
   const { otherCaterer: showOtherCaterer } = useConditionalLogic(
