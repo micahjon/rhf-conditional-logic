@@ -2,6 +2,10 @@
 
 A tiny library that makes it easy to define conditional logic in one place and expose it in components for conditional rendering, smarter validation & only submitting visible values.
 
+[![npm](https://img.shields.io/npm/v/rhf-conditional-logic.svg)](https://www.npmjs.com/package/rhf-conditional-logic)
+[![minzip](https://img.shields.io/bundlephobia/minzip/rhf-conditional-logic.svg)](https://www.npmjs.com/package/rhf-conditional-logic)
+![types](https://img.shields.io/badge/types-typescript-blueviolet)
+
 ## Features
 
 - Define conditional logic (whether to show/hide field) in a single typed config object
