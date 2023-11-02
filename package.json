@@ -1,6 +1,6 @@
 {
   "name": "rhf-conditional-logic",
-  "version": "0.0.2-alpha.0",
+  "version": "0.0.2-alpha.1",
   "main": "./dist/rhf-conditional-logic.cjs",
   "module": "./dist/rhf-conditional-logic.mjs",
   "exports": {
@@ -28,9 +28,10 @@
     "pub": "npm publish"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-hook-form": "^7.47.0",
     "ts-extras": "^0.11.0"
+  },
+  "peerDependencies": {
+    "react-hook-form": "^7.0.0"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.1.1",
@@ -50,7 +51,9 @@
     "postcss": "^8.4.27",
     "postcss-scss": "^4.0.6",
     "prettier": "^3.0.1",
+    "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hook-form": "^7.47.0",
     "rimraf": "^5.0.1",
     "ts-node": "^10.9.1",
     "typescript": "^5.1.6",
