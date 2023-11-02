@@ -56,21 +56,22 @@ export function pruneHiddenFields<
   getValues: UseFormGetValues<TFieldValues>
 ) {
   // Run all conditional logic and get results
-  const formFieldVisibility = getConditionalLogic(
-    objectKeys(conditions) as TFieldNames,
+  const fieldNames = objectKeys(conditions) as TFieldNames;
+  const conditionResults = getConditionalLogic(
+    fieldNames,
     conditions,
     getValues
   );
 
   // Remove hidden values
   let values = getValues();
-  for (const fieldName in formFieldVisibility) {
-    const isHidden =
-      formFieldVisibility[fieldName as TFieldNames[number]] === false;
+  fieldNames.forEach((fieldName, index) => {
+    const isHidden = conditionResults[index] === false;
     if (isHidden) {
       values = deleteByPathWithoutMutation(values, fieldName) as TFieldValues;
     }
-  }
+  });
+
   return values;
 }
 

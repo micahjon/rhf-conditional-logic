@@ -32,6 +32,7 @@ export function Form() {
     control,
     register,
     formState: { errors },
+    reset,
   } = formMethods;
 
   const onSubmit = () => {
@@ -39,9 +40,10 @@ export function Form() {
       "Successfully submitted",
       pruneHiddenFields(conditions, formMethods.getValues) as FormSchema
     );
+    reset(getDefaultValues());
   };
 
-  const { otherCaterer: showOtherCaterer } = useConditionalLogic(
+  const [showOtherCaterer] = useConditionalLogic(
     ["otherCaterer"],
     conditions,
     getValues,
@@ -63,7 +65,7 @@ export function Form() {
     <FormProvider {...formMethods}>
       <form onSubmit={handleSubmit(onSubmit)}>
         <label>
-          Name
+          Your Name
           <input type="text" {...register("contactName")} />
           <FieldError errors={errors} path="contactName" />
         </label>
@@ -137,13 +139,12 @@ function Guest({ index, remove }: { index: number; remove: () => void }) {
   } = useFormContext<BlankFormSchema>();
   const prefix = `guests.${index}` as const;
 
-  const conditionResult = useConditionalLogic(
+  const [showWineField] = useConditionalLogic(
     [`${prefix}.wine`],
     conditions,
     getValues,
     control
   );
-  const showWineField = conditionResult[`${prefix}.wine`];
 
   return (
     <div
@@ -158,7 +159,7 @@ function Guest({ index, remove }: { index: number; remove: () => void }) {
       }}
     >
       <label>
-        Name
+        Guest Name
         <input type="text" {...register(`${prefix}.name`)} />
         <FieldError errors={errors} path={`${prefix}.name`} />
       </label>
@@ -232,7 +233,7 @@ function FieldError({
   const error = get(errors, path);
   if (error && error.type && error.message) {
     return (
-      <div style={{ color: "crimson", marginBottom: "1rem" }}>
+      <div role="alert" style={{ color: "crimson", marginBottom: "1rem" }}>
         {error.message}
       </div>
     );
