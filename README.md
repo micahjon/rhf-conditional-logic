@@ -12,7 +12,7 @@ A tiny library that makes it easy to define conditional logic in one place and e
 - `useConditionalLogic()` hook returns visibility of passed fields and automatically detects & watches dependencies with `useWatch()`
 - `pruneHiddenFields()` util lets you remove hidden fields from `getValues()` before validation and after submission.
   - This lets you track hidden field values (`shouldUnregister = false`) for a great UX but not have to worry about hidden fields showing up in `errors` or preventing submission entirely.
-- Supports defining a single condition for all items in an array using `#` as a wildcard index
+- Supports defining a single condition for each item in an array using `#` as a wildcard index
 - Fully typed with Typescript, get autocompletion & validation based on your Zod schema (or whatever validator you're using)
 
 ## Getting Started
@@ -73,6 +73,11 @@ export function Form() {
     control,
     name: "guests",
   });
+
+  const onSubmit = () => {
+    const validVisibleFields = pruneHiddenFields(conditions, getValues);
+    // Do something with pruned submission...
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
