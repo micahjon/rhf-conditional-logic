@@ -47,8 +47,9 @@ type FormSchema = z.infer<typeof formSchema>;
 const conditions: FieldConditions<FormSchema> = {
   // Show "Other Caterer" if "Other" option is selected
   otherCaterer: getValues => getValues("caterer") === "Other",
-  // Show "Wine" options for guests over 21. # stands in for "current" index
-  ["guests.#.wine"]: getValues => getValues("guests.#.age") === "21+",
+  // Show "Wine" options for guests over 21
+  // Note: "#" stands in for "current" index
+  ["guests.#.wine"]: getValues => getValues("guests.#.age") >= 21,
 };
 
 export function Form() {
