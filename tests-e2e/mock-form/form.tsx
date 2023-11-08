@@ -38,6 +38,12 @@ export function Form() {
   const onSubmit = (data: BlankFormSchema) => {
     // At this point, data has passed validation
     console.log("Successfully submitted", data as FormSchema);
+
+    // For tests
+    Object.assign(window, {
+      formSubmissionDataForTests: data,
+    });
+
     reset(getDefaultValues());
   };
 

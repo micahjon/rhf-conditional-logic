@@ -1,5 +1,11 @@
 import { test, expect } from "@playwright/test";
 
+declare global {
+  interface Window {
+    formSubmissionDataForTests: Record<string, string>;
+  }
+}
+
 test("is the right page", async ({ page }) => {
   await page.goto("/");
 
@@ -35,12 +41,35 @@ test("hidden field with invalid content is ignored", async ({ page }) => {
   await page.getByLabel("Elephants Catering").check();
   expect(await page.getByLabel("Other Caterer")).toBeHidden();
 
+  // Show nested hidden field, add content, and hide it again
+  await page.getByLabel("21+").check();
+  await page.getByLabel("White").check();
+
   // Now fill in all remaining fields and submit
   await page.getByLabel("Your Name").fill("Micah");
   await page.getByLabel("Email").fill("micah@test.com");
   await page.getByLabel("Guest Name").fill("Bob");
   await page.getByLabel("13 - 20").check();
   await page.getByText("Submit").click();
+
+  const validFormData = await page.evaluate(() =>
+    JSON.stringify(window.formSubmissionDataForTests)
+  );
+  expect(validFormData).toEqual(
+    JSON.stringify({
+      contactName: "Micah",
+      contactEmail: "micah@test.com",
+      caterer: "Elephants Catering",
+      // Other Caterer = "." should be omitted
+      guests: [
+        {
+          name: "Bob",
+          age: "13-20",
+          // Wine Pairing = White should be omitted
+        },
+      ],
+    })
+  );
 
   // There should be no errors on the form and the inputs should be blank
   expect(await page.getByRole("alert")).toBeHidden();

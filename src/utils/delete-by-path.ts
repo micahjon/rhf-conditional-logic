@@ -39,7 +39,11 @@ export function deleteByPathWithoutMutation(
   keysToRecurse.forEach((key, index) => {
     if (index < keysToRecurse.length - 1) {
       // @ts-expect-error Clone object at this level
-      objectToUpdate[key] = { ...objectToUpdate[key] };
+      objectToUpdate[key] = Array.isArray(objectToUpdate[key])
+        ? // @ts-expect-error Clone array
+          [...objectToUpdate[key]]
+        : // @ts-expect-error Clone object
+          { ...objectToUpdate[key] };
       // @ts-expect-error Now recurse down to the next level
       objectToUpdate = objectToUpdate[key];
     } else {

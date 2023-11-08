@@ -6,12 +6,13 @@ import {
   useWatch,
 } from "react-hook-form";
 import { objectKeys } from "ts-extras";
-import { FieldConditions } from "./types";
+import { FieldConditions, FieldPathPlusHash } from "./types";
 import {
   getConditionalLogic,
   getConditionalLogicWithDependencies,
 } from "./utils/conditional-logic";
 import { deleteByPathWithoutMutation } from "./utils/delete-by-path";
+import { getByPath } from "./utils/get-by-path";
 
 //
 // Public API
@@ -56,19 +57,59 @@ export function pruneHiddenFields<
   getValues: UseFormGetValues<TFieldValues>
 ) {
   // Run all conditional logic and get results
-  const fieldNames = objectKeys(conditions) as TFieldNames;
+  const fieldPathsWithHashes = objectKeys(
+    conditions
+  ) as FieldPathPlusHash<TFieldValues>[];
+  let values = getValues();
+
+  const fieldPaths = fieldPathsWithHashes
+    .map(fieldPath => {
+      const pathParts = fieldPath.split(".");
+      if (!pathParts.includes("#")) return fieldPath;
+
+      // Handle path containing hashes standing in for indexes by creating a
+      // new path for each possible index
+      const hashIndices = pathParts
+        .map((part, index) => (part === "#" ? index : false))
+        .filter(i => i !== false) as number[];
+      let pathsToTransform: string[] = [fieldPath];
+      for (const hashIndex of hashIndices) {
+        // No more paths to transform. Means we've hit dead ends for every path
+        if (!pathsToTransform.length) break;
+
+        // Paths to transform after this iteration
+        const nextPathsToTransform: string[] = [];
+
+        // Swap out this hash index in ever path
+        for (const path of pathsToTransform) {
+          const partsBeforeHash = path.split(".").slice(0, hashIndex);
+          const partsAfterHash = path.split(".").slice(hashIndex + 1);
+          const expectedArray = getByPath(values)(partsBeforeHash.join("."));
+          if (Array.isArray(expectedArray)) {
+            expectedArray.forEach((_, index) => {
+              nextPathsToTransform.push(
+                [...partsBeforeHash, index, ...partsAfterHash].join(".")
+              );
+            });
+          }
+        }
+        pathsToTransform = nextPathsToTransform;
+      }
+      return pathsToTransform;
+    })
+    .flat() as TFieldNames;
+
   const conditionResults = getConditionalLogic(
-    fieldNames,
+    fieldPaths,
     conditions,
     getValues
   );
 
   // Remove hidden values
-  let values = getValues();
-  fieldNames.forEach((fieldName, index) => {
+  fieldPaths.forEach((fieldPath, index) => {
     const isHidden = conditionResults[index] === false;
     if (isHidden) {
-      values = deleteByPathWithoutMutation(values, fieldName) as TFieldValues;
+      values = deleteByPathWithoutMutation(values, fieldPath) as TFieldValues;
     }
   });
 
