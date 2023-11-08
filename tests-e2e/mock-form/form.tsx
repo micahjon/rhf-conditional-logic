@@ -35,11 +35,9 @@ export function Form() {
     reset,
   } = formMethods;
 
-  const onSubmit = () => {
-    console.log(
-      "Successfully submitted",
-      pruneHiddenFields(conditions, formMethods.getValues) as FormSchema
-    );
+  const onSubmit = (data: BlankFormSchema) => {
+    // At this point, data has passed validation
+    console.log("Successfully submitted", data as FormSchema);
     reset(getDefaultValues());
   };
 

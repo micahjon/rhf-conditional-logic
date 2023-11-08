@@ -75,9 +75,8 @@ export function Form() {
     name: "guests",
   });
 
-  const onSubmit = () => {
-    const validVisibleFields = pruneHiddenFields(conditions, getValues);
-    // Do something with pruned submission...
+  const onSubmit = (data: FormSchema) => {
+    // Do something with pruned & validated form submission data...
   };
 
   return (
