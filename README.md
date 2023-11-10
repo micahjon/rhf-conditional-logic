@@ -27,7 +27,7 @@ A tiny library that makes it easy to define conditional logic in one place, expo
   const { register } = useConditionalForm<FormSchema>({
     conditions,
     resolver: zodResolver(formSchema),
-    defaultValues: getDefaultValues(),
+    defaultValues: {...},
   });
   ```
 
@@ -46,17 +46,16 @@ A tiny library that makes it easy to define conditional logic in one place, expo
 npm i rhf-conditional-logic
 ```
 
+Totally up to you, but I find it cleaner to stick schemas in one file and components in another, e.g.
+
 ```tsx
-import { useForm } from 'react-hook-form';
-import {
-  useConditionalForm,
-  useCondition,
-  FieldConditions,
-} from 'rhf-conditional-logic';
+// form-schema.ts
+import { z } from 'zod';
+import { FieldConditions } from 'rhf-conditional-logic';
 
 // Define form schema with conditional fields optional, since hidden field values
 // will not be included in the form submission
-const formSchema = z.object({
+export const formSchema = z.object({
   caterer: z.enum(['Elephants Catering', 'Delta BBQ', 'Other']),
   otherCaterer: z.string().min(2).optional(), // Shown if "caterer" is "Other"
   guests: z.array(
@@ -66,17 +65,24 @@ const formSchema = z.object({
     })
   ),
 });
-type FormSchema = z.infer<typeof formSchema>;
+export type FormSchema = z.infer<typeof formSchema>;
 
 // All conditional logic goes in a single declarative object
 // { path.to.field: (getValues) => boolean }
-const conditions: FieldConditions<FormSchema> = {
+export const conditions: FieldConditions<FormSchema> = {
   // Show "Other Caterer" if "Other" option is selected
   otherCaterer: getValues => getValues('caterer') === 'Other',
   // Show "Wine" options for guests over 21
   // Note: "#" wildcard stands-in for "current" array index
   ['guests.#.wine']: getValues => getValues('guests.#.age') >= 21,
 };
+```
+
+```tsx
+// Form.tsx
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useConditionalForm, useCondition } from 'rhf-conditional-logic';
+import { FormSchema, conditions, formSchema } from './form-schema';
 
 export function Form() {
   // useConditionalForm() wraps useForm() and prunes hidden field values
@@ -84,7 +90,7 @@ export function Form() {
   const { getValues, control } = useConditionalForm<FormSchema>({
     conditions, // Your conditional logic definition goes here
     resolver: zodResolver(formSchema), // Required
-    defaultValues: getDefaultValues(), // Required
+    defaultValues, // Required
   });
 
   // "showCaterer" boolean will update based on "caterer" value
