@@ -5,10 +5,9 @@ import {
   FieldPath,
   FormProvider,
   useFieldArray,
-  useForm,
   useFormContext,
 } from "react-hook-form";
-import { pruneHiddenFields, useConditionalLogic } from "../../src";
+import { useConditionalForm, useCondition } from "../../src";
 import {
   BlankFormSchema,
   FormSchema,
@@ -19,12 +18,10 @@ import {
 import { get } from "lodash-es";
 
 export function Form() {
-  const formMethods = useForm<BlankFormSchema>({
+  const formMethods = useConditionalForm<BlankFormSchema>({
+    conditions,
+    resolver: zodResolver(formSchema),
     defaultValues: getDefaultValues(),
-    resolver: function (_: BlankFormSchema, ...otherArgs) {
-      const prunedValues = pruneHiddenFields(conditions, formMethods.getValues);
-      return zodResolver(formSchema)(prunedValues, ...otherArgs);
-    },
   });
   const {
     handleSubmit,
@@ -47,7 +44,7 @@ export function Form() {
     reset(getDefaultValues());
   };
 
-  const [showOtherCaterer] = useConditionalLogic(
+  const [showOtherCaterer] = useCondition(
     ["otherCaterer"],
     conditions,
     getValues,
@@ -143,7 +140,7 @@ function Guest({ index, remove }: { index: number; remove: () => void }) {
   } = useFormContext<BlankFormSchema>();
   const prefix = `guests.${index}` as const;
 
-  const [showWineField] = useConditionalLogic(
+  const [showWineField] = useCondition(
     [`${prefix}.wine`],
     conditions,
     getValues,

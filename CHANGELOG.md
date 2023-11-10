@@ -2,17 +2,17 @@
 
 All notable changes to the "rhf-conditional-logic" project will be documented in this file.
 
-## [0.0.1-alpha.1] - 2023-10-31
+## [0.0.3-alpha.0] - 2023-11-10
 
-First working draft of library!
+- Add `useConditionalForm()` hook (drop-in replacement for `useForm()` that calls `pruneHiddenFields()` before validation)
+- Rename `useConditionalLogic()` -> `useCondition()` for brevity
+- Swap order of `pruneHiddenFields()` parameters (pass `getValues` first)
 
-- Expose `useConditionalLogic()` hook
-- Expose `pruneHiddenFields()` util
+## [0.0.2-alpha.3] - 2023-11-08
 
-## [0.0.1-alpha.4] - 2023-10-31
-
-- Stop using `JSON.stringify()` to clone form data before pruning, since form data may not be fully serializable (user could stick anything in there).
-  Instead, use new `deleteByPathWithoutMutation()` utility to prune values without mutation
+- Fix bug where deeply nested values weren't pruned
+- Fix bug where pruning within an array converted the array to an object
+- Stop recommending pruning of valid form submission (since pruning already happens in resolver before validation)
 
 ## [0.0.2-alpha.0] - 2023-11-02
 
@@ -38,8 +38,14 @@ const [showWineField] = useConditionalLogic(
 );
 ```
 
-## [0.0.2-alpha.3] - 2023-11-08
+## [0.0.1-alpha.4] - 2023-10-31
 
-- Fix bug where deeply nested values weren't pruned
-- Fix bug where pruning within an array converted the array to an object
-- Stop recommending pruning of valid form submission (since pruning already happens in resolver before validation)
+- Stop using `JSON.stringify()` to clone form data before pruning, since form data may not be fully serializable (user could stick anything in there).
+  Instead, use new `deleteByPathWithoutMutation()` utility to prune values without mutation
+
+## [0.0.1-alpha.1] - 2023-10-31
+
+First working draft of library!
+
+- Expose `useConditionalLogic()` hook
+- Expose `pruneHiddenFields()` util

@@ -1,5 +1,5 @@
-// Source: https://stackoverflow.com/a/57491234/1546808
 // Delete from a field path from an object, e.g. "a.b"
+// without mutating said object
 export function deleteByPathWithoutMutation(
   object: Record<string, unknown>,
   path: string

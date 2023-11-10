@@ -1,6 +1,6 @@
 # Conditional Logic for React Hook Forms
 
-A tiny library that makes it easy to define conditional logic in one place and expose it in components for conditional rendering, smarter validation & only submitting visible values.
+A tiny library that makes it easy to define conditional logic in one place, expose it in components for conditional rendering, and ignore hidden field values during validation & submission.
 
 [![npm](https://img.shields.io/npm/v/rhf-conditional-logic.svg)](https://www.npmjs.com/package/rhf-conditional-logic)
 [![minzip](https://img.shields.io/bundlephobia/minzip/rhf-conditional-logic.svg)](https://www.npmjs.com/package/rhf-conditional-logic)
@@ -8,12 +8,12 @@ A tiny library that makes it easy to define conditional logic in one place and e
 
 ## Features
 
-- Define conditional logic (whether to show/hide field) in a single typed config object
-- `useConditionalLogic()` hook returns visibility of passed fields and automatically detects & watches dependencies with `useWatch()`
-- `pruneHiddenFields()` util lets you remove hidden fields from `getValues()` before validation and after submission.
-  - This lets you track hidden field values (`shouldUnregister = false`) for a great UX but not have to worry about hidden fields showing up in `errors` or preventing submission entirely.
-- Supports defining a single condition for each item in an array using `#` as a wildcard index
-- Fully typed with Typescript, get autocompletion & validation based on your Zod schema (or whatever validator you're using)
+- Define conditional logic (whether to show/hide fields) in a single typed object
+  - A single condition can be defined for all indices in an array by using `#` as a wildcard (e.g. `guests.#.email`)
+- `useConditionalForm()` drop-in replacement for `useForm()` prunes hidden field values before validation.
+  This way you can track hidden field values with `shouldUnregister = false` for better UX but not have to worry about hidden fields showing up in `errors` or preventing submission entirely.
+- `useCondition()` hook returns visibility of passed field(s) and automatically re-renders when dependencies change using `useWatch()`
+- Fully typed with Typescript! Get autocompletion & validation based on your Zod schema (or whatever validator you're using)
 
 ## Getting Started
 
@@ -24,13 +24,13 @@ npm i rhf-conditional-logic
 ```tsx
 import { useForm } from "react-hook-form";
 import {
-  useConditionalLogic,
-  pruneHiddenFields,
+  useConditionalForm,
+  useCondition,
   FieldConditions,
 } from "rhf-conditional-logic";
 
-// Define form schema with conditional fields optional, so that these
-// field values can be pruned when hidden (pre-validation, pre-submission)
+// Define form schema with conditional fields optional, since hidden field values
+// will not be included in the form submission
 const formSchema = z.object({
   caterer: z.enum(["Elephants Catering", "Delta BBQ", "Other"]),
   otherCaterer: z.string().min(2).optional(), // Shown if "caterer" is "Other"
@@ -44,26 +44,26 @@ const formSchema = z.object({
 type FormSchema = z.infer<typeof formSchema>;
 
 // All conditional logic goes in a single declarative object
+// { path.to.field: (getValues) => boolean }
 const conditions: FieldConditions<FormSchema> = {
   // Show "Other Caterer" if "Other" option is selected
   otherCaterer: getValues => getValues("caterer") === "Other",
   // Show "Wine" options for guests over 21
-  // Note: "#" stands in for "current" index
+  // Note: "#" wildcard stands-in for "current" array index
   ["guests.#.wine"]: getValues => getValues("guests.#.age") >= 21,
 };
 
 export function Form() {
-  const { getValues, control } = useForm<FormSchema>({
-    defaultValues: getDefaultValues(),
-    resolver: function (_: FormSchema, ...otherArgs) {
-      // Remove values associated with hidden fields so they don't interfere with validation
-      const prunedValues = pruneHiddenFields(conditions, getValues);
-      return zodResolver(formSchema)(prunedValues, ...otherArgs);
-    },
+  // useConditionalForm() wraps useForm() and prunes hidden field values
+  // before validation / submission
+  const { getValues, control } = useConditionalForm<FormSchema>({
+    conditions, // Your conditional logic definition goes here
+    resolver: zodResolver(formSchema), // Required
+    defaultValues: getDefaultValues(), // Required
   });
 
   // "showCaterer" boolean will update based on "caterer" value
-  const [showCaterer] = useConditionalLogic(
+  const [showCaterer] = useCondition(
     ["otherCaterer"],
     conditions,
     getValues,
@@ -75,8 +75,8 @@ export function Form() {
     name: "guests",
   });
 
-  const onSubmit = (data: FormSchema) => {
-    // Do something with pruned & validated form submission data...
+  const onSubmit = (validVisibleFields: FormSchema) => {
+    // Do something with pruned & validated form submission!
   };
 
   return (
@@ -94,7 +94,7 @@ function Guest({ index }: { index: number }) {
 
   // "showWineField" boolean will update based on "age" value
   // for this particular field array index
-  const [showWineField] = useConditionalLogic(
+  const [showWineField] = useCondition(
     [`guests.${index}.wine`],
     conditions,
     getValues,
@@ -107,4 +107,4 @@ function Guest({ index }: { index: number }) {
 
 ## Future improvements
 
-Update `useConditionalLogic` signature to allow for single field (instead of array). Maybe add provider option so we only have one param?
+Update `useCondition` signature to allow for single field (instead of array). Maybe add provider option so we only have one param?

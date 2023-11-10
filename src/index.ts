@@ -3,6 +3,9 @@ import {
   FieldPath,
   FieldValues,
   UseFormGetValues,
+  UseFormProps,
+  UseFormReturn,
+  useForm,
   useWatch,
 } from "react-hook-form";
 import { objectKeys } from "ts-extras";
@@ -26,7 +29,7 @@ import { getByPath } from "./utils/get-by-path";
  * @param control React Hook Form's control object
  * @returns A map of each field name path to a boolean (show or hide)
  */
-export function useConditionalLogic<
+export function useCondition<
   TFieldValues extends FieldValues,
   TFieldNames extends FieldPath<TFieldValues>[],
 >(
@@ -45,16 +48,16 @@ export function useConditionalLogic<
  * Prune hidden fields from form values
  * This way invalid values in hidden fields don't cause validation errors
  * and hidden fields are not included in final form submission
- * @param conditions The field conditions object with all conditional logic for this form
  * @param getValues React Hook Form's getValues() utility function
+ * @param conditions The field conditions object with all conditional logic for this form
  * @returns All field values except those hidden by conditional logic
  */
 export function pruneHiddenFields<
   TFieldValues extends FieldValues,
   TFieldNames extends FieldPath<TFieldValues>[],
 >(
-  conditions: FieldConditions<TFieldValues>,
-  getValues: UseFormGetValues<TFieldValues>
+  getValues: UseFormGetValues<TFieldValues>,
+  conditions: FieldConditions<TFieldValues>
 ) {
   // Run all conditional logic and get results
   const fieldPathsWithHashes = objectKeys(
@@ -114,6 +117,39 @@ export function pruneHiddenFields<
   });
 
   return values;
+}
+
+type WithRequiredProperty<Type, Key extends keyof Type> = Type & {
+  [Property in Key]-?: Type[Property];
+};
+
+/**
+ * Drop-in replacement for useForm() that prunes hidden field values before validation
+ * Only new parameter is conditions: your conditional logic definition object
+ * @param props — form configuration and validation parameters.
+ * @param props.conditions - Required conditional logic definitions
+ * @param props.resolver - Required resolver parameter, e.g. zodResolver(schema)
+ * @param props.defaultValues - Required default values parameter
+ * @returns
+ */
+export function useConditionalForm<TFieldValues extends FieldValues>(
+  props: WithRequiredProperty<
+    UseFormProps<TFieldValues>,
+    "resolver" | "defaultValues"
+  > & {
+    conditions: FieldConditions<TFieldValues>;
+  }
+) {
+  const { conditions, resolver, ...useFormOptions } = props;
+  const formMethods: UseFormReturn<TFieldValues> = useForm({
+    resolver: (_: TFieldValues, ...otherArgs) => {
+      // Prune hidden fields before validating
+      const prunedValues = pruneHiddenFields(formMethods.getValues, conditions);
+      return resolver(prunedValues, ...otherArgs);
+    },
+    ...useFormOptions,
+  });
+  return formMethods;
 }
 
 //
