@@ -3,3 +3,4 @@ tests
 /test-results/
 /playwright-report/
 /playwright/.cache/
+/tests-*
