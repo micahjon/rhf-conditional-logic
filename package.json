@@ -22,7 +22,7 @@
     "tsc": "tsc",
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
-    "test:unit": "vitest",
+    "test:unit": "vitest --config ./tests-unit/vitest.config.ts",
     "lint:scripts": "eslint . --ext .ts",
     "format:scripts": "prettier . --write",
     "pub": "npm run build && npm publish"
