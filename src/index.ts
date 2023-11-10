@@ -7,15 +7,15 @@ import {
   UseFormReturn,
   useForm,
   useWatch,
-} from "react-hook-form";
-import { objectKeys } from "ts-extras";
-import { FieldConditions, FieldPathPlusHash } from "./types";
+} from 'react-hook-form';
+import { objectKeys } from 'ts-extras';
+import { FieldConditions, FieldPathPlusHash } from './types';
 import {
   getConditionalLogic,
   getConditionalLogicWithDependencies,
-} from "./utils/conditional-logic";
-import { deleteByPathWithoutMutation } from "./utils/delete-by-path";
-import { getByPath } from "./utils/get-by-path";
+} from './utils/conditional-logic';
+import { deleteByPathWithoutMutation } from './utils/delete-by-path';
+import { getByPath } from './utils/get-by-path';
 
 //
 // Public API
@@ -38,8 +38,11 @@ export function useCondition<
   getValues: UseFormGetValues<TFieldValues>,
   control: Control<TFieldValues>
 ) {
-  const { formFieldVisibility, dependencies } =
-    getConditionalLogicWithDependencies(fieldNamePaths, conditions, getValues);
+  const { formFieldVisibility, dependencies } = getConditionalLogicWithDependencies(
+    fieldNamePaths,
+    conditions,
+    getValues
+  );
   useWatch({ control, name: Array.from(dependencies) });
   return formFieldVisibility;
 }
@@ -67,13 +70,13 @@ export function pruneHiddenFields<
 
   const fieldPaths = fieldPathsWithHashes
     .map(fieldPath => {
-      const pathParts = fieldPath.split(".");
-      if (!pathParts.includes("#")) return fieldPath;
+      const pathParts = fieldPath.split('.');
+      if (!pathParts.includes('#')) return fieldPath;
 
       // Handle path containing hashes standing in for indexes by creating a
       // new path for each possible index
       const hashIndices = pathParts
-        .map((part, index) => (part === "#" ? index : false))
+        .map((part, index) => (part === '#' ? index : false))
         .filter(i => i !== false) as number[];
       let pathsToTransform: string[] = [fieldPath];
       for (const hashIndex of hashIndices) {
@@ -85,13 +88,13 @@ export function pruneHiddenFields<
 
         // Swap out this hash index in ever path
         for (const path of pathsToTransform) {
-          const partsBeforeHash = path.split(".").slice(0, hashIndex);
-          const partsAfterHash = path.split(".").slice(hashIndex + 1);
-          const expectedArray = getByPath(values)(partsBeforeHash.join("."));
+          const partsBeforeHash = path.split('.').slice(0, hashIndex);
+          const partsAfterHash = path.split('.').slice(hashIndex + 1);
+          const expectedArray = getByPath(values)(partsBeforeHash.join('.'));
           if (Array.isArray(expectedArray)) {
             expectedArray.forEach((_, index) => {
               nextPathsToTransform.push(
-                [...partsBeforeHash, index, ...partsAfterHash].join(".")
+                [...partsBeforeHash, index, ...partsAfterHash].join('.')
               );
             });
           }
@@ -102,11 +105,7 @@ export function pruneHiddenFields<
     })
     .flat() as TFieldNames;
 
-  const conditionResults = getConditionalLogic(
-    fieldPaths,
-    conditions,
-    getValues
-  );
+  const conditionResults = getConditionalLogic(fieldPaths, conditions, getValues);
 
   // Remove hidden values
   fieldPaths.forEach((fieldPath, index) => {
@@ -135,7 +134,7 @@ type WithRequiredProperty<Type, Key extends keyof Type> = Type & {
 export function useConditionalForm<TFieldValues extends FieldValues>(
   props: WithRequiredProperty<
     UseFormProps<TFieldValues>,
-    "resolver" | "defaultValues"
+    'resolver' | 'defaultValues'
   > & {
     conditions: FieldConditions<TFieldValues>;
   }

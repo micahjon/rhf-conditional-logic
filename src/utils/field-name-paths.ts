@@ -1,6 +1,6 @@
-import { FieldPath, FieldValues } from "react-hook-form";
-import { FieldPathPlusHash } from "../types";
-import { hashIndexRegex, integerRegex } from "./regex";
+import { FieldPath, FieldValues } from 'react-hook-form';
+import { FieldPathPlusHash } from '../types';
+import { hashIndexRegex, integerRegex } from './regex';
 
 // Given a list of condition keys with hashes, find the first one
 // that matches a particular field name path
@@ -11,7 +11,7 @@ export function getConditionKeyWithHashThatMatchesPath<
   pathWithIndices: TFieldName,
   conditionKeysWithHashes: FieldPathPlusHash<TFieldValues>[]
 ) {
-  const pathParts = pathWithIndices.split(".");
+  const pathParts = pathWithIndices.split('.');
   // If path has a numberic index, attempt to find a condition with a
   // wildcard "#" hash index
   // This is used to allow a single condition to match multiple indices
@@ -29,7 +29,7 @@ export function getConditionKeyWithHashThatMatchesPath<
     //   (target all cats in the first house only)
 
     // Bail if the number of path segments are different
-    const conditionKeyParts = conditionKey.split(".");
+    const conditionKeyParts = conditionKey.split('.');
     if (pathParts.length !== conditionKeyParts.length) continue;
 
     // Check to see if the field names & indices & hashes all line up as expected
@@ -40,7 +40,7 @@ export function getConditionKeyWithHashThatMatchesPath<
       if (pathPart === conditionKeyPart) return true;
 
       // Index in path matches hash in condition key
-      return integerRegex.test(pathPart) && conditionKeyPart === "#";
+      return integerRegex.test(pathPart) && conditionKeyPart === '#';
     });
     if (conditionMatchesPath) return conditionKey;
   }
@@ -61,11 +61,11 @@ export function swapOutHashesInFieldPath<
     return requestedFieldPath as FieldPath<TFieldValues>;
   }
 
-  const conditionalFieldPathParts = conditionalFieldPath.split(".");
+  const conditionalFieldPathParts = conditionalFieldPath.split('.');
   let hasDiverged = false;
 
   return requestedFieldPath
-    .split(".")
+    .split('.')
     .map((requestedPart, requestedPartIndex) => {
       // Conditional field name path no longer matches requested field path. Stop searching for overlap.
       if (hasDiverged) return requestedPart;
@@ -79,7 +79,7 @@ export function swapOutHashesInFieldPath<
       if (conditionalPart === requestedPart) return requestedPart;
 
       // Swap out # in requested field path with corresponding index in conditional field path
-      if (requestedPart === "#" && integerRegex.test(conditionalPart)) {
+      if (requestedPart === '#' && integerRegex.test(conditionalPart)) {
         return conditionalPart;
       }
 
@@ -87,5 +87,5 @@ export function swapOutHashesInFieldPath<
       hasDiverged = true;
       return requestedPart;
     })
-    .join(".") as FieldPath<TFieldValues>;
+    .join('.') as FieldPath<TFieldValues>;
 }

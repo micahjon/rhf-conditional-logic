@@ -1,21 +1,21 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
+import { zodResolver } from '@hookform/resolvers/zod';
+import React from 'react';
 import {
   FieldErrors,
   FieldPath,
   FormProvider,
   useFieldArray,
   useFormContext,
-} from "react-hook-form";
-import { useConditionalForm, useCondition } from "../../src";
+} from 'react-hook-form';
+import { useConditionalForm, useCondition } from '../../src';
 import {
   BlankFormSchema,
   FormSchema,
   conditions,
   formSchema,
   getDefaultValues,
-} from "./schema";
-import { get } from "lodash-es";
+} from './schema';
+import { get } from 'lodash-es';
 
 export function Form() {
   const formMethods = useConditionalForm<BlankFormSchema>({
@@ -34,7 +34,7 @@ export function Form() {
 
   const onSubmit = (data: BlankFormSchema) => {
     // At this point, data has passed validation
-    console.log("Successfully submitted", data as FormSchema);
+    console.log('Successfully submitted', data as FormSchema);
 
     // For tests
     Object.assign(window, {
@@ -45,7 +45,7 @@ export function Form() {
   };
 
   const [showOtherCaterer] = useCondition(
-    ["otherCaterer"],
+    ['otherCaterer'],
     conditions,
     getValues,
     control
@@ -57,7 +57,7 @@ export function Form() {
     remove: removeGuestByIndex,
   } = useFieldArray({
     control,
-    name: "guests",
+    name: 'guests',
   });
 
   // console.log({ errors });
@@ -67,30 +67,26 @@ export function Form() {
       <form onSubmit={handleSubmit(onSubmit)}>
         <label>
           Your Name
-          <input type="text" {...register("contactName")} />
+          <input type="text" {...register('contactName')} />
           <FieldError errors={errors} path="contactName" />
         </label>
         <label>
           Email
-          <input type="email" {...register("contactEmail")} />
+          <input type="email" {...register('contactEmail')} />
           <FieldError errors={errors} path="contactEmail" />
         </label>
         <fieldset>
           <legend>Select Caterer</legend>
           <label>
-            <input
-              {...register("caterer")}
-              type="radio"
-              value="Elephants Catering"
-            />
+            <input {...register('caterer')} type="radio" value="Elephants Catering" />
             Elephants Catering
           </label>
           <label>
-            <input {...register("caterer")} type="radio" value="Delta BBQ" />
+            <input {...register('caterer')} type="radio" value="Delta BBQ" />
             Delta BBQ
           </label>
           <label>
-            <input {...register("caterer")} type="radio" value="Other" />
+            <input {...register('caterer')} type="radio" value="Other" />
             Other
           </label>
           <FieldError errors={errors} path="caterer" />
@@ -98,26 +94,22 @@ export function Form() {
         {showOtherCaterer && (
           <label>
             Other Caterer
-            <input type="text" {...register("otherCaterer")} />
+            <input type="text" {...register('otherCaterer')} />
             <FieldError errors={errors} path="otherCaterer" />
           </label>
         )}
         <fieldset>
           <label>List Guests</label>
           {guestFields.map((field, i) => (
-            <Guest
-              key={field.id}
-              index={i}
-              remove={() => removeGuestByIndex(i)}
-            />
+            <Guest key={field.id} index={i} remove={() => removeGuestByIndex(i)} />
           ))}
           <button
             onClick={() => appendGuest(getDefaultValues().guests[0])}
             style={{
-              height: "36px",
-              width: "auto",
-              padding: "4px 1rem",
-              float: "right",
+              height: '36px',
+              width: 'auto',
+              padding: '4px 1rem',
+              float: 'right',
             }}
           >
             Add Guest
@@ -150,13 +142,13 @@ function Guest({ index, remove }: { index: number; remove: () => void }) {
   return (
     <div
       style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "8px",
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-        padding: "1rem 1rem 0",
-        marginBottom: "1rem",
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        border: '1px solid #ccc',
+        borderRadius: '8px',
+        padding: '1rem 1rem 0',
+        marginBottom: '1rem',
       }}
     >
       <label>
@@ -171,8 +163,7 @@ function Guest({ index, remove }: { index: number; remove: () => void }) {
           Under 5
         </label>
         <label>
-          <input {...register(`${prefix}.age`)} type="radio" value="6-12" />6 -
-          12
+          <input {...register(`${prefix}.age`)} type="radio" value="6-12" />6 - 12
         </label>
         <label>
           <input {...register(`${prefix}.age`)} type="radio" value="13-20" />
@@ -196,11 +187,7 @@ function Guest({ index, remove }: { index: number; remove: () => void }) {
             White
           </label>
           <label>
-            <input
-              {...register(`${prefix}.wine`)}
-              type="radio"
-              value="Rosé on ice"
-            />
+            <input {...register(`${prefix}.wine`)} type="radio" value="Rosé on ice" />
             Rosé on ice
           </label>
           <label>
@@ -213,9 +200,9 @@ function Guest({ index, remove }: { index: number; remove: () => void }) {
       <button
         onClick={() => remove()}
         style={{
-          height: "36px",
-          width: "auto",
-          padding: "4px 1rem",
+          height: '36px',
+          width: 'auto',
+          padding: '4px 1rem',
         }}
       >
         Remove Guest
@@ -234,7 +221,7 @@ function FieldError({
   const error = get(errors, path);
   if (error && error.type && error.message) {
     return (
-      <div role="alert" style={{ color: "crimson", marginBottom: "1rem" }}>
+      <div role="alert" style={{ color: 'crimson', marginBottom: '1rem' }}>
         {error.message}
       </div>
     );

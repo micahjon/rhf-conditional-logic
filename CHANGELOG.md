@@ -22,8 +22,8 @@ All notable changes to the "rhf-conditional-logic" project will be documented in
 
 ```ts
 // Before (returns object)
-const { "guests.0.wine": showWineField } = useConditionalLogic(
-  ["guests.0.wine"],
+const { 'guests.0.wine': showWineField } = useConditionalLogic(
+  ['guests.0.wine'],
   conditions,
   getValues,
   control
@@ -31,7 +31,7 @@ const { "guests.0.wine": showWineField } = useConditionalLogic(
 
 // After (returns array)
 const [showWineField] = useConditionalLogic(
-  ["guests.0.wine"],
+  ['guests.0.wine'],
   conditions,
   getValues,
   control

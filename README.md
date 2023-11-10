@@ -22,22 +22,22 @@ npm i rhf-conditional-logic
 ```
 
 ```tsx
-import { useForm } from "react-hook-form";
+import { useForm } from 'react-hook-form';
 import {
   useConditionalForm,
   useCondition,
   FieldConditions,
-} from "rhf-conditional-logic";
+} from 'rhf-conditional-logic';
 
 // Define form schema with conditional fields optional, since hidden field values
 // will not be included in the form submission
 const formSchema = z.object({
-  caterer: z.enum(["Elephants Catering", "Delta BBQ", "Other"]),
+  caterer: z.enum(['Elephants Catering', 'Delta BBQ', 'Other']),
   otherCaterer: z.string().min(2).optional(), // Shown if "caterer" is "Other"
   guests: z.array(
     z.object({
       age: z.number(),
-      wine: z.enum(["Red", "White", "Rosé on ice", "None"]).optional(), // Show if 21+
+      wine: z.enum(['Red', 'White', 'Rosé on ice', 'None']).optional(), // Show if 21+
     })
   ),
 });
@@ -47,10 +47,10 @@ type FormSchema = z.infer<typeof formSchema>;
 // { path.to.field: (getValues) => boolean }
 const conditions: FieldConditions<FormSchema> = {
   // Show "Other Caterer" if "Other" option is selected
-  otherCaterer: getValues => getValues("caterer") === "Other",
+  otherCaterer: getValues => getValues('caterer') === 'Other',
   // Show "Wine" options for guests over 21
   // Note: "#" wildcard stands-in for "current" array index
-  ["guests.#.wine"]: getValues => getValues("guests.#.age") >= 21,
+  ['guests.#.wine']: getValues => getValues('guests.#.age') >= 21,
 };
 
 export function Form() {
@@ -63,16 +63,11 @@ export function Form() {
   });
 
   // "showCaterer" boolean will update based on "caterer" value
-  const [showCaterer] = useCondition(
-    ["otherCaterer"],
-    conditions,
-    getValues,
-    control
-  );
+  const [showCaterer] = useCondition(['otherCaterer'], conditions, getValues, control);
 
   const { fields: guestFields, append: appendGuest } = useFieldArray({
     control,
-    name: "guests",
+    name: 'guests',
   });
 
   const onSubmit = (validVisibleFields: FormSchema) => {

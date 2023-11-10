@@ -1,10 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  BrowserNativeObject,
-  FieldValues,
-  IsEqual,
-  Primitive,
-} from "react-hook-form";
+import { BrowserNativeObject, FieldValues, IsEqual, Primitive } from 'react-hook-form';
 
 /**
  * OVERVIEW
@@ -82,8 +77,7 @@ export type GetValues<TFieldValues extends FieldValues> = {
 /**
  * Export our custom version of FieldPath that allows for hashes
  */
-export type FieldPathPlusHash<TFieldValues extends FieldValues> =
-  PathCL<TFieldValues>;
+export type FieldPathPlusHash<TFieldValues extends FieldValues> = PathCL<TFieldValues>;
 
 /**
  * Helper type for recursively constructing paths through a type.
@@ -148,14 +142,14 @@ export type PathValueCL<T, P extends PathCL<T> | ArrayPath<T>> = T extends any
       ? R extends PathCL<T[K]>
         ? PathValueCL<T[K], R>
         : never
-      : K extends `${ArrayKey}` | "#" // Treat hash as an array index
+      : K extends `${ArrayKey}` | '#' // Treat hash as an array index
       ? T extends ReadonlyArray<infer V>
         ? PathValueCL<V, R & PathCL<V>>
         : never
       : never
     : P extends keyof T
     ? T[P]
-    : P extends `${ArrayKey}` | "#" // Treat hash as an array index
+    : P extends `${ArrayKey}` | '#' // Treat hash as an array index
     ? T extends ReadonlyArray<infer V>
       ? V
       : never
@@ -202,7 +196,7 @@ export type IsAny<T> = 0 extends 1 & T ? true : false;
  * IsTuple<number[]> = false
  * ```
  */
-export type IsTuple<T extends ReadonlyArray<any>> = number extends T["length"]
+export type IsTuple<T extends ReadonlyArray<any>> = number extends T['length']
   ? false
   : true;
 
@@ -221,10 +215,7 @@ export type ArrayKey = number;
    * TupleKeys<[number, string]> = '0' | '1'
    * ```
    */
-export type TupleKeys<T extends ReadonlyArray<any>> = Exclude<
-  keyof T,
-  keyof any[]
->;
+export type TupleKeys<T extends ReadonlyArray<any>> = Exclude<keyof T, keyof any[]>;
 
 //
 // Copied from src/types/eager.ts
@@ -272,8 +263,7 @@ export type PathCL<T> = T extends any ? PathInternalCL<T> : never;
 /**
  * See {@link PathCL}
  */
-export type FieldPathCL<TFieldValues extends FieldValues> =
-  PathCL<TFieldValues>;
+export type FieldPathCL<TFieldValues extends FieldValues> = PathCL<TFieldValues>;
 
 /**
  * Helper type for recursively constructing paths through a type.
@@ -352,9 +342,7 @@ export type FieldPathValueCL<
  */
 export type FieldPathValuesCL<
   TFieldValues extends FieldValues,
-  TPath extends
-    | FieldPathCL<TFieldValues>[]
-    | readonly FieldPathCL<TFieldValues>[],
+  TPath extends FieldPathCL<TFieldValues>[] | readonly FieldPathCL<TFieldValues>[],
   // eslint-disable-next-line @typescript-eslint/ban-types
 > = {} & {
   [K in keyof TPath]: FieldPathValueCL<

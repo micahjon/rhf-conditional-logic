@@ -1,11 +1,11 @@
-import { FieldPath, FieldValues, UseFormGetValues } from "react-hook-form";
-import { objectKeys } from "ts-extras";
-import { FieldConditions, FieldPathPlusHash, GetValues } from "../types";
-import { hashIndexRegex, integerIndexRegex } from "./regex";
+import { FieldPath, FieldValues, UseFormGetValues } from 'react-hook-form';
+import { objectKeys } from 'ts-extras';
+import { FieldConditions, FieldPathPlusHash, GetValues } from '../types';
+import { hashIndexRegex, integerIndexRegex } from './regex';
 import {
   getConditionKeyWithHashThatMatchesPath,
   swapOutHashesInFieldPath,
-} from "./field-name-paths";
+} from './field-name-paths';
 
 // Utility to compute conditional logic for one or more fields and track dependencies
 export function getConditionalLogicWithDependencies<
@@ -24,9 +24,7 @@ export function getConditionalLogicWithDependencies<
     TFieldNames extends FieldPath<TFieldValues>[],
   >(fieldOrFields: TFieldName | readonly [...TFieldNames]) {
     if (!fieldOrFields) {
-      throw new Error(
-        "Please pass getValues a field name or array of field names"
-      );
+      throw new Error('Please pass getValues a field name or array of field names');
     }
     if (Array.isArray(fieldOrFields)) {
       for (const field of fieldOrFields) {

@@ -3,11 +3,11 @@
 export function getByPath(object: Record<string, unknown>) {
   return function (path: string) {
     // Recurse into object until we're at the right level
-    const keys: string[] = path.split(".");
+    const keys: string[] = path.split('.');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let value: any = object;
     for (const key of keys) {
-      if (value && typeof value === "object" && key in value) {
+      if (value && typeof value === 'object' && key in value) {
         value = value[key];
       } else {
         return undefined;

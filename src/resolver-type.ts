@@ -1,4 +1,4 @@
-import { FieldValues, ResolverOptions, ResolverResult } from "react-hook-form";
+import { FieldValues, ResolverOptions, ResolverResult } from 'react-hook-form';
 
 // Resolver adapted from https://github.com/react-hook-form/resolvers/blob/master/zod/src/types.ts
 // Hopefully generic enough to cover all resolvers (not just Zod)
@@ -9,7 +9,7 @@ export type GenericResolver = <T>(
     /**
      * @default async
      */
-    mode?: "async" | "sync";
+    mode?: 'async' | 'sync';
     /**
      * Return the raw input values rather than the parsed values.
      * @default false

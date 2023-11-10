@@ -5,7 +5,7 @@ export function deleteByPathWithoutMutation(
   path: string
 ): Record<string, unknown> {
   // Recurse into object until we're at the right level
-  const keysToRecurse = path.split(".");
+  const keysToRecurse = path.split('.');
   const lastKey = keysToRecurse.pop();
   if (!lastKey) return object;
 
@@ -23,7 +23,7 @@ export function deleteByPathWithoutMutation(
     objectToDeleteFrom = objectToDeleteFrom[key];
 
     // If no longer an object, bail!
-    if (!objectToDeleteFrom || typeof objectToDeleteFrom !== "object") {
+    if (!objectToDeleteFrom || typeof objectToDeleteFrom !== 'object') {
       return object;
     }
   }
