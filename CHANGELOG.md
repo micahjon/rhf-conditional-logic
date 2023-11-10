@@ -1,6 +1,4 @@
-# Change Log
-
-All notable changes to the "rhf-conditional-logic" project will be documented in this file.
+# Changelog / Releases
 
 ## [0.0.3-alpha.0] - 2023-11-10
 

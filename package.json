@@ -16,6 +16,10 @@
     }
   },
   "types": "./dist/rhf-conditional-logic.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/micahjon/rhf-conditional-logic.git"
+  },
   "scripts": {
     "dev": "vite --host",
     "build": "rimraf dist && tsc && vite build && dts-bundle-generator --config ./dts-bundle-generator.config.ts",
