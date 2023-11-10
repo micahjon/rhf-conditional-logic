@@ -1,6 +1,6 @@
 {
   "name": "rhf-conditional-logic",
-  "version": "0.0.2-alpha.1",
+  "version": "0.0.2-alpha.3",
   "main": "./dist/rhf-conditional-logic.cjs",
   "module": "./dist/rhf-conditional-logic.mjs",
   "exports": {
@@ -25,7 +25,7 @@
     "test:unit": "vitest",
     "lint:scripts": "eslint . --ext .ts",
     "format:scripts": "prettier . --write",
-    "pub": "npm publish"
+    "pub": "npm run build && npm publish"
   },
   "dependencies": {
     "ts-extras": "^0.11.0"
