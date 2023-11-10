@@ -8,7 +8,15 @@ A tiny library that makes it easy to define conditional logic in one place, expo
 
 ## Features
 
-- Define conditional logic (whether to show/hide fields) in a single typed object
+- Define conditional logic (whether to show/hide fields) in a single typed object, e.g.
+  ```ts
+  const conditions = {
+    // Show "Other Caterer" field if "Other" option is selected
+    otherCaterer: getValues => getValues('caterer') === 'Other',
+    // Show wine pairing options for guests over 21
+    ['guests.#.wine']: getValues => getValues('guests.#.age') >= 21,
+  };
+  ```
   - A single condition can be defined for all indices in an array by using `#` as a wildcard (e.g. `guests.#.email`)
 - `useConditionalForm()` drop-in replacement for `useForm()` prunes hidden field values before validation.
   This way you can track hidden field values with `shouldUnregister = false` for better UX but not have to worry about hidden fields showing up in `errors` or preventing submission entirely.
