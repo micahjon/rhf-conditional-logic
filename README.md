@@ -22,7 +22,22 @@ A tiny library that makes it easy to define conditional logic in one place, expo
   - A single condition can be defined for all indices in an array by using `#` as a wildcard (e.g. `guests.#.email`)
 - `useConditionalForm()` drop-in replacement for `useForm()` prunes hidden field values before validation.
   This way you can track hidden field values with `shouldUnregister = false` for better UX but not have to worry about hidden fields showing up in `errors` or preventing submission entirely.
+
+  ```ts
+  const { register } = useConditionalForm<FormSchema>({
+    conditions,
+    resolver: zodResolver(formSchema),
+    defaultValues: getDefaultValues(),
+  });
+  ```
+
 - `useCondition()` hook returns visibility of passed field(s) and automatically re-renders when dependencies change using `useWatch()`
+
+  ```ts
+  // showField is a boolean
+  const [showField] = useCondition(['fieldName'], conditions, getValues, control);
+  ```
+
 - Fully typed with Typescript! Get autocompletion & validation based on your Zod schema (or whatever validator you're using)
 
 ## Getting Started
@@ -112,4 +127,4 @@ function Guest({ index }: { index: number }) {
 
 ## Future improvements
 
-Update `useCondition` signature to allow for single field (instead of array). Maybe add provider option so we only have one param?
+Update `useCondition` signature to allow for single field (instead of array). Maybe add FormContext awareness so we only have one param?
