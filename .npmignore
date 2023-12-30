@@ -4,3 +4,5 @@ tests
 /playwright-report/
 /playwright/.cache/
 /tests-*
+*.config.ts
+index.html
