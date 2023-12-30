@@ -32,6 +32,7 @@ module.exports = defineConfig({
       formats,
       fileName: (format) => fileName[format],
     },
+    minify: false,
     rollupOptions: {
       // make sure to externalize deps that shouldn't be bundled
       // into your library

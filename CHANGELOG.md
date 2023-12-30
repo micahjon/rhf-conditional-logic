@@ -1,5 +1,11 @@
 # Changelog / Releases
 
+## [0.1.0] - 2023-12-29
+
+First stable release! No functionality changes.
+
+- Publish JS to NPM without minification to make debugging easier downstream.
+
 ## [0.0.3-alpha.1] - 2023-11-10
 
 - Add `useConditionalForm()` hook (drop-in replacement for `useForm()` that calls `pruneHiddenFields()` before validation)
