@@ -8,6 +8,8 @@ A tiny library that makes it easy to define conditional logic in one place, expo
 [![minzip](https://img.shields.io/bundlephobia/minzip/rhf-conditional-logic.svg)](https://www.npmjs.com/package/rhf-conditional-logic)
 ![types](https://img.shields.io/badge/types-typescript-blueviolet)
 
+_Curious about the backstory of this library? Check out my article on [Type-Safe Conditional Logic in React Hook Forms + Zod](https://micahjon.com/2023/form-validation-with-zod/)._
+
 ## Features
 
 - Define conditional logic (whether to show/hide fields) in a single typed object, e.g.
@@ -21,7 +23,7 @@ A tiny library that makes it easy to define conditional logic in one place, expo
   ```
   - A single condition can be defined for all indices in an array by using `#` as a wildcard (e.g. `guests.#.email`)
 - `useConditionalForm()` drop-in replacement for `useForm()` prunes hidden field values before validation.
-  This way you can track hidden field values with `shouldUnregister = false` for better UX but not have to worry about hidden fields showing up in `errors` or preventing submission entirely.
+  This way you can track hidden field values with `shouldUnregister = false` for better UX but not have to worry about hidden fields showing up in `errors` and preventing submission.
 
   ```ts
   const { register } = useConditionalForm<FormSchema>({
