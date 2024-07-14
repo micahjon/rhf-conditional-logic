@@ -1,29 +1,27 @@
 {
   "name": "rhf-conditional-logic",
   "description": "Conditional Logic for React Hook Forms. Fully typed and compatible with resolvers (e.g. Zod)",
-  "version": "0.1.0",
-  "main": "./dist/rhf-conditional-logic.cjs",
-  "module": "./dist/rhf-conditional-logic.mjs",
+  "type": "module",
+  "version": "0.1.1",
+  "source": "./src/index.ts",
   "exports": {
     ".": {
-      "require": {
-        "default": "./dist/rhf-conditional-logic.cjs",
-        "types": "./dist/rhf-conditional-logic.d.ts"
-      },
-      "import": {
-        "default": "./dist/rhf-conditional-logic.mjs",
-        "types": "./dist/rhf-conditional-logic.d.ts"
-      }
+      "types": "./dist/rhf-conditional-logic.d.ts",
+      "require": "./dist/rhf-conditional-logic.cjs",
+      "import": "./dist/rhf-conditional-logic.modern.mjs"
     }
   },
   "types": "./dist/rhf-conditional-logic.d.ts",
+  "main": "./dist/rhf-conditional-logic.cjs",
+  "module": "./dist/rhf-conditional-logic.mjs",
+  "unpkg": "./dist/rhf-conditional-logic.umd.min.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/micahjon/rhf-conditional-logic.git"
   },
   "scripts": {
     "dev": "vite --host",
-    "build": "rimraf dist && tsc && vite build && dts-bundle-generator --config ./dts-bundle-generator.config.ts",
+    "build": "rimraf dist && microbundle --compress false && microbundle --f umd",
     "tsc": "tsc",
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
@@ -47,12 +45,12 @@
     "@types/react": "^18.2.31",
     "@typescript-eslint/eslint-plugin": "^6.3.0",
     "@typescript-eslint/parser": "^6.3.0",
-    "dts-bundle-generator": "^8.0.1",
     "eslint": "^8.46.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
     "lint-staged": "^13.2.3",
     "lodash-es": "^4.17.21",
+    "microbundle": "^0.15.1",
     "postcss": "^8.4.27",
     "postcss-scss": "^4.0.6",
     "prettier": "^3.0.1",
