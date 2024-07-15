@@ -6,14 +6,9 @@
   "module": "./dist/rhf-conditional-logic.mjs",
   "exports": {
     ".": {
-      "require": {
-        "default": "./dist/rhf-conditional-logic.cjs",
-        "types": "./dist/rhf-conditional-logic.d.ts"
-      },
-      "import": {
-        "default": "./dist/rhf-conditional-logic.mjs",
-        "types": "./dist/rhf-conditional-logic.d.ts"
-      }
+      "import": "./dist/rhf-conditional-logic.mjs",
+      "require": "./dist/rhf-conditional-logic.cjs",
+      "types": "./dist/rhf-conditional-logic.d.ts"
     }
   },
   "types": "./dist/rhf-conditional-logic.d.ts",
