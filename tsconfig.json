@@ -9,13 +9,19 @@
     "strict": true,
     "sourceMap": true,
     "resolveJsonModule": true,
-    "esModuleInterop": true,
     "noEmit": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["vite/client", "node"]
+    "types": ["vite/client", "node"],
+
+    // https://github.com/sambacha/typescript-cjs-esm-tests?tab=readme-ov-file#opt-in-compiler-options
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": false,
+
+    // https://github.com/sambacha/typescript-cjs-esm-tests?tab=readme-ov-file#suggested-tsconfig-values
+    "isolatedModules": true
   },
   "include": ["src"],
   "exclude": ["**/*.test.ts", "node_modules", "test/**", ".history/**"]

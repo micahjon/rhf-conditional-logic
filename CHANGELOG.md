@@ -2,7 +2,9 @@
 
 ## [0.1.1] - 2024-07-13
 
-Add webpack support (WIP...)
+No changes: just re-publish on npm with NextJS support
+
+- Fix [Issue #1 - Module not found: Default condition should be last one](https://github.com/micahjon/rhf-conditional-logic/issues/1) by using [microbundle](https://github.com/developit/microbundle) for build.
 
 ## [0.1.0] - 2023-12-29
 
