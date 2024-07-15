@@ -2,7 +2,7 @@
 
 ## [0.1.1] - 2024-07-14
 
-No changes in functionality, just fix NextJS import error by tweaking `package.json`
+No changes in functionality, just fix NextJS import error by tweaking `package.json`'s `.extends` property
 
 Fixes `Module not found: Default condition should be last one` (see [Issue #1](https://github.com/micahjon/rhf-conditional-logic/issues/1))
 
