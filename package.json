@@ -14,7 +14,7 @@
   "types": "./dist/rhf-conditional-logic.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/micahjon/rhf-conditional-logic.git"
+    "url": "git+https://github.com/micahjon/rhf-conditional-logic.git"
   },
   "scripts": {
     "dev": "vite --host",
