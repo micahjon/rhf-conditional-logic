@@ -1,5 +1,11 @@
 # Changelog / Releases
 
+## [0.1.1] - 2024-07-14
+
+No changes in functionality, just fix NextJS import error by tweaking `package.json`
+
+Fixes `Module not found: Default condition should be last one` (see [Issue #1](https://github.com/micahjon/rhf-conditional-logic/issues/1))
+
 ## [0.1.0] - 2023-12-29
 
 First stable release! No functionality changes.
