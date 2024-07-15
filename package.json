@@ -1,25 +1,20 @@
 {
   "name": "rhf-conditional-logic",
   "description": "Conditional Logic for React Hook Forms. Fully typed and compatible with resolvers (e.g. Zod)",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "./dist/rhf-conditional-logic.cjs",
   "module": "./dist/rhf-conditional-logic.mjs",
   "exports": {
     ".": {
-      "require": {
-        "default": "./dist/rhf-conditional-logic.cjs",
-        "types": "./dist/rhf-conditional-logic.d.ts"
-      },
-      "import": {
-        "default": "./dist/rhf-conditional-logic.mjs",
-        "types": "./dist/rhf-conditional-logic.d.ts"
-      }
+      "types": "./dist/rhf-conditional-logic.d.ts",
+      "import": "./dist/rhf-conditional-logic.mjs",
+      "require": "./dist/rhf-conditional-logic.cjs"
     }
   },
   "types": "./dist/rhf-conditional-logic.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/micahjon/rhf-conditional-logic.git"
+    "url": "git+https://github.com/micahjon/rhf-conditional-logic.git"
   },
   "scripts": {
     "dev": "vite --host",
