@@ -1,6 +1,6 @@
 # Conditional Logic for React Hook Forms
 
-A tiny library that makes it easy to define conditional logic in one place, expose it in components for conditional rendering, and ignore hidden field values during validation & submission.
+A tiny library that makes it easy to define conditional logic in one place, expose it in components for conditional rendering, and prune hidden field values before validation & submission.
 
 [Features](#features)&emsp;[Getting Started](#getting-started)&emsp;[Changelog](https://github.com/micahjon/rhf-conditional-logic/blob/main/CHANGELOG.md)
 
@@ -8,22 +8,19 @@ A tiny library that makes it easy to define conditional logic in one place, expo
 [![minzip](https://img.shields.io/bundlephobia/minzip/rhf-conditional-logic.svg)](https://www.npmjs.com/package/rhf-conditional-logic)
 ![types](https://img.shields.io/badge/types-typescript-blueviolet)
 
-_Curious about the backstory of this library? Check out my article on [Type-Safe Conditional Logic in React Hook Forms + Zod](https://micahjon.com/2023/form-validation-with-zod/)._
-
 ## Features
 
-- Define conditional logic (whether to show/hide fields) in a single typed object, e.g.
+- Define conditional logic (whether to show/hide fields) in a single typed object:
+
   ```ts
   const conditions = {
     // Show "Other Caterer" field if "Other" option is selected
     otherCaterer: getValues => getValues('caterer') === 'Other',
-    // Show wine pairing options for guests over 21
-    ['guests.#.wine']: getValues => getValues('guests.#.age') >= 21,
   };
   ```
-  - A single condition can be defined for all indices in an array by using `#` as a wildcard (e.g. `guests.#.email`)
-- `useConditionalForm()` drop-in replacement for `useForm()` prunes hidden field values before validation.
-  This way you can track hidden field values with `shouldUnregister = false` for better UX but not have to worry about hidden fields showing up in `errors` and preventing submission.
+
+- Use `useConditionalForm()` (a drop-in replacement for `useForm()`) to prune hidden field values before validation:
+  
 
   ```ts
   const { register } = useConditionalForm<FormSchema>({
@@ -33,20 +30,30 @@ _Curious about the backstory of this library? Check out my article on [Type-Safe
   });
   ```
 
-- `useCondition()` hook returns visibility of passed field(s) and automatically re-renders when dependencies change using `useWatch()`
+  This way you can track hidden field values with `shouldUnregister = false` but don't have to worry about them showing up in `errors` and preventing submission, or even worse, being submitted when the user didn't intend to submit them!
+
+- Use `useCondition()` (similar to `useWatch()`) to check if one or more conditional fields should be visible.
 
   ```ts
-  // showField is a boolean
-  const [showField] = useCondition(['fieldName'], conditions, getValues, control);
+  const [showOtherOption] = useCondition(['otherCaterer'], conditions, getValues, control);
   ```
 
-- Fully typed with Typescript! Get autocompletion & validation based on your Zod schema (or whatever validator you're using)
+- **Fully typed** with Typescript! Get autocompletion & validation based on your Zod schema (or whatever validator you're using)
+
+- You can even define conditional logic for every item in an array (e.g. rendered via `useFieldArray`) with `#` wildcard that stands in for "current index":
+
+  ```ts
+  const conditions = {
+    // Show wine pairing options for each guest over 21
+    ['guests.#.wine']: getValues => getValues('guests.#.age') >= 21,
+  }
+  ```
 
 ## Getting Started
 
 ```bash
 npm i rhf-conditional-logic
-```
+````
 
 Totally up to you, but I find it cleaner to stick schemas in one file and components in another, e.g.
 
@@ -133,6 +140,9 @@ function Guest({ index }: { index: number }) {
 }
 ```
 
+_Curious about the backstory of this library? Check out my article on [Type-Safe Conditional Logic in React Hook Forms + Zod](https://micahjon.com/2023/form-validation-with-zod/)._
+
 ## Future improvements
 
-Update `useCondition` signature to allow for single field (instead of array). Maybe add FormContext awareness so we only have one param?
+- Update `useCondition()` signature to allow for single field (instead of array).
+- Update `useCondition()` to use `useFormContext()` and allow for optionally passing fewer parameters to it.
