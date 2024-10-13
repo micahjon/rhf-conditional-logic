@@ -84,7 +84,7 @@ describe('mocking console.warn...', () => {
     expect(gcl(['not_a_valid_condition'], conditions, getValues)).toStrictEqual([true]);
     expect(consoleWarnMock).toHaveBeenCalledOnce();
     expect(consoleWarnMock).toHaveBeenLastCalledWith(
-      'Missing conditional logic for "not_a_valid_condition"'
+      'Missing RHF conditional logic for "not_a_valid_condition"'
     );
   });
 });

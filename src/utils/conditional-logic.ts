@@ -105,7 +105,7 @@ export function getConditionalLogic<
 
     // Unable to get conditional logic for this path. Don't hide the field in the UI,
     // but show the developer a warning. They should already have a type error.
-    console.warn(`Missing conditional logic for "${path}"`);
+    console.warn(`Missing RHF conditional logic for "${path}"`);
     return true;
   }) as { [Index in keyof TFieldNamesParam]: boolean };
 }
