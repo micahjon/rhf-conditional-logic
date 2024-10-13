@@ -39,7 +39,7 @@ export const getDefaultValues = (): BlankFormSchema => ({
 });
 
 // Define conditional logic
-export const conditions: FieldConditions<BlankFormSchema> = {
+export const conditions = {
   otherCaterer: getValues => getValues('caterer') === 'Other',
-  ['guests.#.wine']: getValues => getValues('guests.#.age') === '21+',
-};
+  'guests.#.wine': getValues => getValues('guests.#.age') === '21+',
+} satisfies FieldConditions<BlankFormSchema>;
