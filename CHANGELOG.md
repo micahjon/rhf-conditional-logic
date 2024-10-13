@@ -2,7 +2,7 @@
 
 ## [0.1.2] - 2024-10-12
 
-- Improve type-safety of `useCondition(paths, conditions, getValues)` hook by narrowing `paths` to only field paths associated with `conditions`, not any field path associated with the form.
+- Improve type-safety of `useCondition([...paths], conditions, getValues, control)` hook by narrowing `paths` to only field paths associated with `conditions`, not any field path associated with the form.
   This improves editor autocompletion and type safety.
 - If a path is ever provided to `useCondition()` that is is not able to find a condition for, log a warning in the console.
   This should always be accompanied by a type error (above), but is a good safeguard so that `useCondition()` never fails silently.
