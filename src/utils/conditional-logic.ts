@@ -1,6 +1,11 @@
 import { FieldPath, FieldValues, UseFormGetValues } from 'react-hook-form';
 import { objectKeys } from 'ts-extras';
-import { FieldConditions, FieldPathPlusHash, GetValues } from '../types';
+import {
+  FieldConditionPath,
+  FieldConditions,
+  FieldPathPlusHash,
+  GetValues,
+} from '../types';
 import { hashIndexRegex, integerIndexRegex } from './regex';
 import {
   getConditionKeyWithHashThatMatchesPath,
@@ -10,10 +15,11 @@ import {
 // Utility to compute conditional logic for one or more fields and track dependencies
 export function getConditionalLogicWithDependencies<
   TFieldValues extends FieldValues,
-  TFieldNames extends FieldPath<TFieldValues>[],
+  TFieldConditions extends FieldConditions<TFieldValues>,
+  TConditionPath extends FieldConditionPath<TFieldConditions>,
 >(
-  formFieldPaths: readonly [...TFieldNames],
-  conditions: FieldConditions<TFieldValues>,
+  formFieldPaths: readonly [...TConditionPath[]],
+  conditions: TFieldConditions,
   getValues: UseFormGetValues<TFieldValues>
 ) {
   // Whenever a user looks up a value in a conditional logic function, we track
@@ -54,48 +60,52 @@ export function getConditionalLogic<
   TFieldValues extends FieldValues,
   TFieldNames extends FieldPath<TFieldValues>[],
   TFieldNamesParam extends readonly [...TFieldNames],
+  TFieldConditions extends FieldConditions<TFieldValues>,
+  TConditionPath extends FieldConditionPath<TFieldConditions>,
 >(
-  formFieldPaths: TFieldNamesParam,
-  conditions: FieldConditions<TFieldValues>,
+  formFieldPaths: readonly [...TConditionPath[]],
+  conditions: TFieldConditions,
   getValues: GetValues<TFieldValues>
 ) {
   // All condition keys that are generic (have # to match any index)
   const conditionKeysWithHashes = objectKeys(conditions).filter(key =>
     hashIndexRegex.test(key)
-  ) as FieldPathPlusHash<TFieldValues>[];
+  ) as (keyof TFieldConditions & string)[];
 
   return formFieldPaths.map((path): boolean => {
-    let isVisible = true;
-
     if (path in conditions) {
       // Found condition matching this field exactly
-      isVisible = conditions[path as keyof typeof conditions]!(getValues);
-    } else if (conditionKeysWithHashes.length && integerIndexRegex.test(path)) {
+      return conditions[path as keyof typeof conditions]!(getValues);
+    }
+    if (conditionKeysWithHashes.length && integerIndexRegex.test(path)) {
       const conditionKey = getConditionKeyWithHashThatMatchesPath(
         path,
         conditionKeysWithHashes
       );
       if (conditionKey) {
         // Found matching condition key with hashes
-        // When calling getValues(), swap out any indices corresponding to the
-        // hashes with the indices of the passed field path
-        const modifiedGetValues = <
-          TFieldName extends FieldPathPlusHash<TFieldValues>,
-          TFieldNames extends FieldPathPlusHash<TFieldValues>[],
-        >(
-          fieldOrFields: TFieldName | readonly [...TFieldNames]
+        // Before calling getValues(), swap out any indices corresponding to the
+        // hashes with the indices of the passed field path. This allows child
+        // fields to do conditional logic based on their parent's values.
+        const modifiedGetValues = <TFieldName extends FieldPathPlusHash<TFieldValues>>(
+          withHashes: TFieldName | TFieldName[]
         ) => {
-          const transformedFieldOrFields = Array.isArray(fieldOrFields)
-            ? fieldOrFields.map(field => swapOutHashesInFieldPath(field, path))
-            : swapOutHashesInFieldPath(fieldOrFields as TFieldName, path);
-
-          // @ts-expect-error Not sure why this is so hard to get Types working for :(
-          return getValues(transformedFieldOrFields);
+          return Array.isArray(withHashes)
+            ? getValues(
+                withHashes.map(field =>
+                  swapOutHashesInFieldPath(field, path)
+                ) as TFieldName[]
+              )
+            : getValues(swapOutHashesInFieldPath(withHashes, path) as TFieldName);
         };
-        isVisible = conditions[conditionKey]!(modifiedGetValues);
+        // @ts-expect-error Oof, not sure why this isn't getting typed
+        return conditions[conditionKey](modifiedGetValues);
       }
     }
 
-    return isVisible;
+    // Unable to get conditional logic for this path. Don't hide the field in the UI,
+    // but show the developer a warning. They should already have a type error.
+    console.warn(`Missing RHF conditional logic for "${path}"`);
+    return true;
   }) as { [Index in keyof TFieldNamesParam]: boolean };
 }

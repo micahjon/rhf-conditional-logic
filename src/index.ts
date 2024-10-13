@@ -1,6 +1,5 @@
 import {
   Control,
-  FieldPath,
   FieldValues,
   UseFormGetValues,
   UseFormProps,
@@ -9,7 +8,7 @@ import {
   useWatch,
 } from 'react-hook-form';
 import { objectKeys } from 'ts-extras';
-import { FieldConditions, FieldPathPlusHash } from './types';
+import { FieldConditionPath, FieldConditions } from './types';
 import {
   getConditionalLogic,
   getConditionalLogicWithDependencies,
@@ -31,10 +30,11 @@ import { getByPath } from './utils/get-by-path';
  */
 export function useCondition<
   TFieldValues extends FieldValues,
-  TFieldNames extends FieldPath<TFieldValues>[],
+  TFieldConditions extends FieldConditions<TFieldValues>,
+  TConditionPaths extends FieldConditionPath<TFieldConditions>,
 >(
-  fieldNamePaths: readonly [...TFieldNames],
-  conditions: FieldConditions<TFieldValues>,
+  fieldNamePaths: readonly [...TConditionPaths[]],
+  conditions: TFieldConditions,
   getValues: UseFormGetValues<TFieldValues>,
   control: Control<TFieldValues>
 ) {
@@ -57,15 +57,10 @@ export function useCondition<
  */
 export function pruneHiddenFields<
   TFieldValues extends FieldValues,
-  TFieldNames extends FieldPath<TFieldValues>[],
->(
-  getValues: UseFormGetValues<TFieldValues>,
-  conditions: FieldConditions<TFieldValues>
-) {
+  TFieldConditions extends FieldConditions<TFieldValues>,
+>(getValues: UseFormGetValues<TFieldValues>, conditions: TFieldConditions) {
   // Run all conditional logic and get results
-  const fieldPathsWithHashes = objectKeys(
-    conditions
-  ) as FieldPathPlusHash<TFieldValues>[];
+  const fieldPathsWithHashes = objectKeys(conditions);
   let values = getValues();
 
   const fieldPaths = fieldPathsWithHashes
@@ -103,7 +98,7 @@ export function pruneHiddenFields<
       }
       return pathsToTransform;
     })
-    .flat() as TFieldNames;
+    .flat() as unknown[] as FieldConditionPath<TFieldConditions>[];
 
   const conditionResults = getConditionalLogic(fieldPaths, conditions, getValues);
 

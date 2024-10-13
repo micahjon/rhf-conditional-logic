@@ -48,14 +48,19 @@ export function getConditionKeyWithHashThatMatchesPath<
   return undefined;
 }
 
+// Given a field path with hashes to lookup (e.g. "houses.#.color") that a conditional logic
+// path depends on (e.g. "houses.1.cats.2.isNice"), swap out hashes in the requested path
+// to match the current conditional logic path, in this case "houses.1.color"
+// This enables conditional logic based on parent values in field arrays.
+//
+// e.g. show "isNice" field only for cats in blue houses
+// const conditions = { "houses.#.cats.#.isNice": getValues => getValues("houses.#.color") == "blue" }
+//
 export function swapOutHashesInFieldPath<
   TFieldValues extends FieldValues,
-  TFieldNameRequested extends FieldPathPlusHash<TFieldValues>,
-  TFieldNameConditional extends FieldPath<TFieldValues>,
->(
-  requestedFieldPath: TFieldNameRequested,
-  conditionalFieldPath: TFieldNameConditional
-) {
+  TFieldNameWithHash extends FieldPathPlusHash<TFieldValues>,
+  TConditionPath extends FieldPath<TFieldValues>,
+>(requestedFieldPath: TFieldNameWithHash, conditionalFieldPath: TConditionPath) {
   // No hashes to replace with indices
   if (!hashIndexRegex.test(requestedFieldPath)) {
     return requestedFieldPath as FieldPath<TFieldValues>;

@@ -38,6 +38,19 @@ export type FieldConditions<TFieldValues extends FieldValues> = Partial<
 >;
 
 /**
+ * All the form field paths that have conditional logic associated with them
+ * Converts "parent.#.child" to "parent.${number}.child"
+ */
+export type FieldConditionPath<T> = {
+  [K in keyof T]: K extends string ? ReplaceHashesWithNumbers<K> : never;
+}[keyof T];
+
+type ReplaceHashesWithNumbers<T extends string> =
+  T extends `${infer Start}.#.${infer Rest}`
+    ? `${Start}.${number}.${ReplaceHashesWithNumbers<Rest>}`
+    : T;
+
+/**
  * GetValues is derived from UseFormGetValues
  *
  * GetValues has an identical type signature except it does not accept the
