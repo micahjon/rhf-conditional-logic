@@ -16,11 +16,10 @@ A tiny library that makes it easy to define conditional logic in one place, expo
   const conditions = {
     // Show "Other Caterer" field if "Other" option is selected
     otherCaterer: getValues => getValues('caterer') === 'Other',
-  };
+  } satisfies FieldConditions<FormSchema>;
   ```
 
 - Use `useConditionalForm()` (a drop-in replacement for `useForm()`) to prune hidden field values before validation:
-  
 
   ```ts
   const { register } = useConditionalForm<FormSchema>({
@@ -46,14 +45,14 @@ A tiny library that makes it easy to define conditional logic in one place, expo
   const conditions = {
     // Show wine pairing options for each guest over 21
     ['guests.#.wine']: getValues => getValues('guests.#.age') >= 21,
-  }
+  };
   ```
 
 ## Getting Started
 
 ```bash
 npm i rhf-conditional-logic
-````
+```
 
 Totally up to you, but I find it cleaner to stick schemas in one file and components in another, e.g.
 
@@ -78,13 +77,13 @@ export type FormSchema = z.infer<typeof formSchema>;
 
 // All conditional logic goes in a single declarative object
 // { path.to.field: (getValues) => boolean }
-export const conditions: FieldConditions<FormSchema> = {
+export const conditions = {
   // Show "Other Caterer" if "Other" option is selected
   otherCaterer: getValues => getValues('caterer') === 'Other',
   // Show "Wine" options for guests over 21
   // Note: "#" wildcard stands-in for "current" array index
   ['guests.#.wine']: getValues => getValues('guests.#.age') >= 21,
-};
+} satisfies FieldConditions<FormSchema>;
 ```
 
 ```tsx
