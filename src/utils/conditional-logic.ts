@@ -99,7 +99,7 @@ export function getConditionalLogic<
             : getValues(swapOutHashesInFieldPath(withHashes, path) as TFieldName);
         };
         // @ts-expect-error Oof, not sure why this isn't getting typed
-        return conditions[validConditionKey](modifiedGetValues);
+        return conditions[conditionKey](modifiedGetValues);
       }
     }
 
