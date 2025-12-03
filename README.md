@@ -19,7 +19,7 @@ A tiny library that makes it easy to define conditional logic in one place, expo
   } satisfies FieldConditions<FormSchema>;
   ```
 
-- Use `useConditionalForm()` (a drop-in replacement for `useForm()`) to prune hidden field values before validation:
+- Use `useConditionalForm()` (a drop-in replacement for `useForm()`) to prune hidden field values before validation & submission:
 
   ```ts
   const { register } = useConditionalForm<FormSchema>({
