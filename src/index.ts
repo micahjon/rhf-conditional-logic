@@ -5,6 +5,7 @@ import {
   UseFormProps,
   UseFormReturn,
   useForm,
+  useFormContext,
   useWatch,
 } from 'react-hook-form';
 import { objectKeys } from 'ts-extras';
@@ -35,9 +36,25 @@ export function useCondition<
 >(
   fieldNamePaths: readonly [...TConditionPaths[]],
   conditions: TFieldConditions,
-  getValues: UseFormGetValues<TFieldValues>,
-  control: Control<TFieldValues>
+  getValues?: UseFormGetValues<TFieldValues>,
+  control?: Control<TFieldValues>
 ) {
+  const methods = useFormContext();
+
+  // @ts-expect-error Unsure of how to fix TFieldValues / FieldValues mismatch..
+  getValues = getValues || methods.getValues;
+  if (!getValues)
+    throw new Error(
+      'useCondition() missing getValues. Please pass it as the 3rd parameter or use <FormProvider>'
+    );
+
+  // @ts-expect-error Unsure of how to fix TFieldValues / FieldValues mismatch...
+  control = control || methods.control;
+  if (!control)
+    throw new Error(
+      'useCondition() missing control. Please pass it as the 4th parameter or use <FormProvider>'
+    );
+
   const { formFieldVisibility, dependencies } = getConditionalLogicWithDependencies(
     fieldNamePaths,
     conditions,
