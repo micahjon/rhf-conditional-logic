@@ -4,6 +4,7 @@ import {
   FieldErrors,
   FieldPath,
   FormProvider,
+  Resolver,
   useFieldArray,
   useFormContext,
 } from 'react-hook-form';
@@ -18,9 +19,9 @@ import {
 import { get } from 'lodash-es';
 
 export function Form() {
-  const formMethods = useConditionalForm<BlankFormSchema>({
+  const formMethods = useConditionalForm<BlankFormSchema, any, FormSchema>({
     conditions,
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as unknown as Resolver<BlankFormSchema, any, FormSchema>,
     defaultValues: getDefaultValues(),
   });
   const {
@@ -32,9 +33,9 @@ export function Form() {
     reset,
   } = formMethods;
 
-  const onSubmit = (data: BlankFormSchema) => {
+  const onSubmit = (data: FormSchema) => {
     // At this point, data has passed validation
-    console.log('Successfully submitted', data as FormSchema);
+    console.log('Successfully submitted', data);
 
     // For tests
     Object.assign(window, {

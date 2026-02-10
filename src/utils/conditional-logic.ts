@@ -49,7 +49,7 @@ export function getConditionalLogicWithDependencies<
   const formFieldVisibility = getConditionalLogic(
     formFieldPaths,
     conditions,
-    getDependencyValue
+    getDependencyValue as GetValues<TFieldValues>
   );
 
   return { formFieldVisibility, dependencies };
