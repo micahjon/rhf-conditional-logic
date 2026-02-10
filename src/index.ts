@@ -36,7 +36,8 @@ export function useCondition<
   fieldNamePaths: readonly [...TConditionPaths[]],
   conditions: TFieldConditions,
   getValues: UseFormGetValues<TFieldValues>,
-  control: Control<TFieldValues>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  control: Control<TFieldValues, any, any>
 ) {
   const { formFieldVisibility, dependencies } = getConditionalLogicWithDependencies(
     fieldNamePaths,
@@ -126,23 +127,29 @@ type WithRequiredProperty<Type, Key extends keyof Type> = Type & {
  * @param props.defaultValues - Required default values parameter
  * @returns
  */
-export function useConditionalForm<TFieldValues extends FieldValues>(
+export function useConditionalForm<
+  TFieldValues extends FieldValues,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TContext = any,
+  TTransformedValues = TFieldValues,
+>(
   props: WithRequiredProperty<
-    UseFormProps<TFieldValues>,
+    UseFormProps<TFieldValues, TContext, TTransformedValues>,
     'resolver' | 'defaultValues'
   > & {
     conditions: FieldConditions<TFieldValues>;
   }
 ) {
   const { conditions, resolver, ...useFormOptions } = props;
-  const formMethods: UseFormReturn<TFieldValues> = useForm({
-    resolver: (_: TFieldValues, ...otherArgs) => {
-      // Prune hidden fields before validating
-      const prunedValues = pruneHiddenFields(formMethods.getValues, conditions);
-      return resolver(prunedValues, ...otherArgs);
-    },
-    ...useFormOptions,
-  });
+  const formMethods: UseFormReturn<TFieldValues, TContext, TTransformedValues> =
+    useForm({
+      resolver: (_: TFieldValues, ...otherArgs) => {
+        // Prune hidden fields before validating
+        const prunedValues = pruneHiddenFields(formMethods.getValues, conditions);
+        return resolver(prunedValues, ...otherArgs);
+      },
+      ...useFormOptions,
+    });
   return formMethods;
 }
 

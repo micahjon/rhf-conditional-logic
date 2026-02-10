@@ -16,8 +16,8 @@ export type GenericResolver = <T>(
      */
     raw?: boolean;
   }
-) => <TFieldValues extends FieldValues, TContext>(
+) => <TFieldValues extends FieldValues, TContext, TTransformedValues = TFieldValues>(
   values: TFieldValues,
   context: TContext | undefined,
   options: ResolverOptions<TFieldValues>
-) => Promise<ResolverResult<TFieldValues>>;
+) => Promise<ResolverResult<TFieldValues, TTransformedValues>>;

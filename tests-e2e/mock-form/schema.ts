@@ -18,10 +18,8 @@ export type FormSchema = z.infer<typeof formSchema>;
 
 // Make enums nullable initially
 const blankFormSchema = formSchema.extend({
-  caterer: formSchema._def.shape().caterer.nullable(),
-  guests: z
-    .array(guestSchema.extend({ age: guestSchema._def.shape().age.nullable() }))
-    .min(1),
+  caterer: formSchema.shape.caterer.nullable,
+  guests: z.array(guestSchema.extend({ age: guestSchema.shape.age.nullable() })).min(1),
 });
 export type BlankFormSchema = z.infer<typeof blankFormSchema>;
 
