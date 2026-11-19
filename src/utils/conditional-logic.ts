@@ -1,4 +1,10 @@
-import { FieldPath, FieldValues, UseFormGetValues } from 'react-hook-form';
+import {
+  FieldPath,
+  FieldPathValue,
+  FieldPathValues,
+  FieldValues,
+  UseFormGetValues,
+} from 'react-hook-form';
 import { objectKeys } from 'ts-extras';
 import {
   FieldConditionPath,
@@ -25,21 +31,25 @@ export function getConditionalLogicWithDependencies<
   // Whenever a user looks up a value in a conditional logic function, we track
   // its field name as a depedency of the conditional field
   const dependencies: Set<FieldPath<TFieldValues>> = new Set();
-  function getDependencyValue<
-    TFieldName extends FieldPath<TFieldValues>,
-    TFieldNames extends FieldPath<TFieldValues>[],
-  >(fieldOrFields: TFieldName | readonly [...TFieldNames]) {
+  function getDependencyValue<TFieldName extends FieldPath<TFieldValues>>(
+    field: TFieldName
+  ): FieldPathValue<TFieldValues, TFieldName>;
+  function getDependencyValue<TFieldNames extends FieldPath<TFieldValues>[]>(
+    fields: readonly [...TFieldNames]
+  ): [...FieldPathValues<TFieldValues, TFieldNames>];
+  function getDependencyValue(
+    fieldOrFields: FieldPath<TFieldValues> | readonly FieldPath<TFieldValues>[]
+  ) {
     if (!fieldOrFields) {
       throw new Error('Please pass getValues a field name or array of field names');
     }
-    if (Array.isArray(fieldOrFields)) {
-      for (const field of fieldOrFields) {
-        dependencies.add(field);
-      }
-    } else {
-      dependencies.add(fieldOrFields as TFieldName);
+    if (typeof fieldOrFields === 'string') {
+      dependencies.add(fieldOrFields);
+      return getValues(fieldOrFields);
     }
-    // @ts-expect-error Unfortunately not sure why this type isn't lining up :(
+    for (const field of fieldOrFields) {
+      dependencies.add(field);
+    }
     return getValues(fieldOrFields);
   }
 

@@ -18,7 +18,7 @@ import {
 import { get } from 'lodash-es';
 
 export function Form() {
-  const formMethods = useConditionalForm<BlankFormSchema>({
+  const formMethods = useConditionalForm<BlankFormSchema, unknown, FormSchema>({
     conditions,
     resolver: zodResolver(formSchema),
     defaultValues: getDefaultValues(),
@@ -32,9 +32,9 @@ export function Form() {
     reset,
   } = formMethods;
 
-  const onSubmit = (data: BlankFormSchema) => {
-    // At this point, data has passed validation
-    console.log('Successfully submitted', data as FormSchema);
+  const onSubmit = (data: FormSchema) => {
+    // data has passed validation (no cast needed, see above)
+    console.log('Successfully submitted', data);
 
     // For tests
     Object.assign(window, {
@@ -129,7 +129,7 @@ function Guest({ index, remove }: { index: number; remove: () => void }) {
     getValues,
     control,
     formState: { errors },
-  } = useFormContext<BlankFormSchema>();
+  } = useFormContext<BlankFormSchema, unknown, FormSchema>();
   const prefix = `guests.${index}` as const;
 
   const [showWineField] = useCondition(

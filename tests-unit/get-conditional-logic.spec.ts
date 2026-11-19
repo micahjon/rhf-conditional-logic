@@ -1,6 +1,11 @@
 import { get } from 'lodash-es';
+import { UseFormGetValues } from 'react-hook-form';
 import { afterAll, describe, expect, it, test, vi } from 'vitest';
-import { getConditionalLogic as gcl } from '../src/utils/conditional-logic';
+import { FieldConditions } from '../src';
+import {
+  getConditionalLogic as gcl,
+  getConditionalLogicWithDependencies,
+} from '../src/utils/conditional-logic';
 
 const formValues = {
   contactName: 'Micah',
@@ -72,6 +77,29 @@ test('Referencing parent in different lineage', () => {
   expect(
     gcl(['guests.1.bottles.0.isSmudgedByFirstGuest'], conditions, getValues)
   ).toStrictEqual([false]);
+});
+
+test('Tracks concrete dependencies for wildcard lookups of multiple fields', () => {
+  const typedGetValues: UseFormGetValues<typeof formValues> = getValues;
+  const conditions = {
+    'guests.#.bottles.#.isSmudgedByThisGuest': getValues => {
+      const [hasGloves, sips] = getValues([
+        'guests.#.hasGloves',
+        'guests.#.bottles.#.sips',
+      ]);
+      return !hasGloves && typeof sips === 'number' && sips > 0;
+    },
+  } satisfies FieldConditions<typeof formValues>;
+  const result = getConditionalLogicWithDependencies(
+    ['guests.1.bottles.0.isSmudgedByThisGuest'],
+    conditions,
+    typedGetValues
+  );
+  expect(result.formFieldVisibility).toStrictEqual([true]);
+  expect([...result.dependencies]).toStrictEqual([
+    'guests.1.hasGloves',
+    'guests.1.bottles.0.sips',
+  ]);
 });
 
 describe('mocking console.warn...', () => {

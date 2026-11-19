@@ -1,5 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BrowserNativeObject, FieldValues, IsEqual, Primitive } from 'react-hook-form';
+import {
+  BrowserNativeObject,
+  FieldValues,
+  IsEqual,
+  Path,
+  PathValue,
+  Primitive,
+} from 'react-hook-form';
 
 /**
  * OVERVIEW
@@ -46,8 +53,10 @@ export type FieldConditionPath<T> = {
 }[keyof T];
 
 type ReplaceHashesWithNumbers<T extends string> =
-  T extends `${infer Start}.#.${infer Rest}`
-    ? `${Start}.${number}.${ReplaceHashesWithNumbers<Rest>}`
+  T extends `${infer Start}.${infer Rest}`
+    ? `${Start extends '#' ? number : Start}.${ReplaceHashesWithNumbers<Rest>}`
+    : T extends '#'
+    ? `${number}`
     : T;
 
 /**
@@ -145,29 +154,13 @@ type PathImplCL<K extends string | number, V, TraversedTypes> = V extends
  * PathValue<[number, string], '1'> = string
  * ```
  *
- * MODIFICATION: Allow "#" to stand in for an index, so that if a user
- * uses a path with a hash, this doesn't resolve to never.
- * Add conditions both for "#.child" and "parent.#"
+ * Resolve wildcard indices before delegating to RHF so optional ancestors and
+ * other path-value semantics stay aligned with the installed RHF version.
  */
-export type PathValueCL<T, P extends PathCL<T> | ArrayPath<T>> = T extends any
-  ? P extends `${infer K}.${infer R}`
-    ? K extends keyof T
-      ? R extends PathCL<T[K]>
-        ? PathValueCL<T[K], R>
-        : never
-      : K extends `${ArrayKey}` | '#' // Treat hash as an array index
-      ? T extends ReadonlyArray<infer V>
-        ? PathValueCL<V, R & PathCL<V>>
-        : never
-      : never
-    : P extends keyof T
-    ? T[P]
-    : P extends `${ArrayKey}` | '#' // Treat hash as an array index
-    ? T extends ReadonlyArray<infer V>
-      ? V
-      : never
-    : never
-  : never;
+export type PathValueCL<T, P extends PathCL<T> | ArrayPath<T>> = PathValue<
+  T,
+  ReplaceHashesWithNumbers<P> & Path<T>
+>;
 
 //
 //

@@ -1,5 +1,19 @@
 # Changelog / Releases
 
+## [Unreleased]
+
+Compatibility with modern React Hook Form and both Zod 3 and 4 ([micahjon/rhf-conditional-logic#9](https://github.com/micahjon/rhf-conditional-logic/issues/9)).
+
+- **Breaking:** `react-hook-form` peer dependency is now `^7.55.0` (was `^7.0.0`).
+- `useConditionalForm()` now mirrors `useForm()`'s three generics: `useConditionalForm<TInput, TContext, TOutput>()`. Submission callbacks receive the validated output type; editing values, errors, and conditions retain the input type. Output defaults to input for existing single-generic forms.
+- Resolvers retain RHF's strict input/output contract. With modern adapters, separately declared nullable blank types must match the schema's input, not just its output. The README and demo show a Zod 3/4-compatible nullable-input example.
+- `useCondition()` now accepts a `control` from a form whose output type differs from its input type.
+- Conditional path values delegate to installed RHF path-value types, preserving newer optional-parent/array-item semantics instead of relying on an outdated copy.
+- Explicitly re-export the `FieldConditions`, `FieldConditionPath`, and `GetValues` types from the package root.
+- `pruneHiddenFields(values, conditions)` now accepts a plain values object as an alternative to RHF's `getValues`, with inferred input/condition types and unchanged nonmutating pruning behavior. Existing getter calls remain supported.
+- Add compile-time API regressions, hook integration tests, and standalone pruning tests. CI covers RHF 7.55/7.92 with Zod 3/4; resolver output, raw mode, custom sync/async resolvers, context, nested wildcards, and incomplete drafts are covered.
+- Reorganize the README around installation and usage examples for forms, array fields, distinct input/output types, and standalone pruning. Zod/resolver packages remain development-only dependencies.
+
 ## [0.1.2] - 2024-10-12
 
 - Improve type-safety of `useCondition([...paths], conditions, getValues, control)` hook by narrowing `paths` to only field paths associated with `conditions`, not any field path associated with the form.

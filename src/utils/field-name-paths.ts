@@ -63,7 +63,7 @@ export function swapOutHashesInFieldPath<
 >(requestedFieldPath: TFieldNameWithHash, conditionalFieldPath: TConditionPath) {
   // No hashes to replace with indices
   if (!hashIndexRegex.test(requestedFieldPath)) {
-    return requestedFieldPath as FieldPath<TFieldValues>;
+    return requestedFieldPath;
   }
 
   const conditionalFieldPathParts = conditionalFieldPath.split('.');

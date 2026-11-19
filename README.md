@@ -2,7 +2,7 @@
 
 A tiny library that makes it easy to define conditional logic in one place, expose it in components for conditional rendering, and prune hidden field values before validation & submission.
 
-[Features](#features)&emsp;[Getting Started](#getting-started)&emsp;[Changelog](https://github.com/micahjon/rhf-conditional-logic/blob/main/CHANGELOG.md)
+[Getting started](#getting-started)&emsp;[Array fields](#array-fields)&emsp;[Input and output types](#input-and-output-types)&emsp;[Pruning values](#pruning-values)&emsp;[Changelog](CHANGELOG.md)
 
 [![npm](https://img.shields.io/npm/v/rhf-conditional-logic.svg)](https://www.npmjs.com/package/rhf-conditional-logic)
 [![minzip](https://img.shields.io/bundlephobia/minzip/rhf-conditional-logic.svg)](https://www.npmjs.com/package/rhf-conditional-logic)
@@ -10,43 +10,11 @@ A tiny library that makes it easy to define conditional logic in one place, expo
 
 ## Features
 
-- Define conditional logic (whether to show/hide fields) in a single typed object:
-
-  ```ts
-  const conditions = {
-    // Show "Other Caterer" field if "Other" option is selected
-    otherCaterer: getValues => getValues('caterer') === 'Other',
-  } satisfies FieldConditions<FormSchema>;
-  ```
-
-- Use `useConditionalForm()` (a drop-in replacement for `useForm()`) to prune hidden field values before validation & submission:
-
-  ```ts
-  const { register } = useConditionalForm<FormSchema>({
-    conditions,
-    resolver: zodResolver(formSchema),
-    defaultValues: {...},
-  });
-  ```
-
-  This way you can track hidden field values with `shouldUnregister = false` but don't have to worry about them showing up in `errors` and preventing submission, or even worse, being submitted when the user didn't intend to submit them!
-
-- Use `useCondition()` (similar to `useWatch()`) to check if one or more conditional fields should be visible.
-
-  ```ts
-  const [showOtherOption] = useCondition(['otherCaterer'], conditions, getValues, control);
-  ```
-
-- **Fully typed** with Typescript! Get autocompletion & validation based on your Zod schema (or whatever validator you're using)
-
-- You can even define conditional logic for every item in an array (e.g. rendered via `useFieldArray`) with `#` wildcard that stands in for "current index":
-
-  ```ts
-  const conditions = {
-    // Show wine pairing options for each guest over 21
-    ['guests.#.wine']: getValues => getValues('guests.#.age') >= 21,
-  };
-  ```
+- Define visibility rules in one typed object.
+- Render conditional fields with `useCondition()`, which updates when their dependencies change.
+- Prune hidden values before validation and submission without clearing the user's editing values.
+- Support nested arrays with `#` wildcard paths.
+- Use any React Hook Form resolver, including Zod 3 and 4.
 
 ## Getting Started
 
@@ -54,94 +22,201 @@ A tiny library that makes it easy to define conditional logic in one place, expo
 npm i rhf-conditional-logic
 ```
 
-Totally up to you, but I find it cleaner to stick schemas in one file and components in another, e.g.
+Requires React Hook Form `^7.55.0`. The examples below use Zod `3.25.76` or `4` with `@hookform/resolvers` `5.2.2+`; install those separately if needed:
 
-```tsx
+```bash
+npm i react-hook-form @hookform/resolvers zod
+```
+
+For Zod 4, use TypeScript `5.5+` with `strict` enabled.
+
+### Define the schema and conditions
+
+Make conditional fields optional in your schema: hidden values are removed before the resolver validates the form.
+
+```ts
 // form-schema.ts
 import { z } from 'zod';
-import { FieldConditions } from 'rhf-conditional-logic';
+import { type FieldConditions } from 'rhf-conditional-logic';
 
-// Define form schema with conditional fields optional, since hidden field values
-// will not be included in the form submission
 export const formSchema = z.object({
   caterer: z.enum(['Elephants Catering', 'Delta BBQ', 'Other']),
-  otherCaterer: z.string().min(2).optional(), // Shown if "caterer" is "Other"
+  otherCaterer: z.string().min(2).optional(),
   guests: z.array(
     z.object({
       age: z.number(),
-      wine: z.enum(['Red', 'White', 'Rosé on ice', 'None']).optional(), // Show if 21+
+      wine: z.enum(['Red', 'White', 'None']).optional(),
     })
   ),
 });
 export type FormSchema = z.infer<typeof formSchema>;
 
-// All conditional logic goes in a single declarative object
-// { path.to.field: (getValues) => boolean }
 export const conditions = {
-  // Show "Other Caterer" if "Other" option is selected
   otherCaterer: getValues => getValues('caterer') === 'Other',
-  // Show "Wine" options for guests over 21
-  // Note: "#" wildcard stands-in for "current" array index
-  ['guests.#.wine']: getValues => getValues('guests.#.age') >= 21,
+  'guests.#.wine': getValues => getValues('guests.#.age') >= 21,
 } satisfies FieldConditions<FormSchema>;
+
+export const defaultValues: FormSchema = {
+  caterer: 'Elephants Catering',
+  otherCaterer: '',
+  guests: [{ age: 0 }],
+};
 ```
+
+### Render the form
+
+`useConditionalForm()` accepts the usual `useForm()` options plus `conditions`. Both `resolver` and `defaultValues` are required. `useCondition()` returns one visibility boolean for each requested field.
 
 ```tsx
 // Form.tsx
 import { zodResolver } from '@hookform/resolvers/zod';
+import { FormProvider, useFieldArray } from 'react-hook-form';
 import { useConditionalForm, useCondition } from 'rhf-conditional-logic';
-import { FormSchema, conditions, formSchema } from './form-schema';
+import { type FormSchema, conditions, defaultValues, formSchema } from './form-schema';
+import { Guest } from './Guest';
 
 export function Form() {
-  // useConditionalForm() wraps useForm() and prunes hidden field values
-  // before validation / submission
-  const { getValues, control } = useConditionalForm<FormSchema>({
-    conditions, // Your conditional logic definition goes here
-    resolver: zodResolver(formSchema), // Required
-    defaultValues, // Required
+  const methods = useConditionalForm<FormSchema>({
+    conditions,
+    resolver: zodResolver(formSchema),
+    defaultValues,
   });
-
-  // "showCaterer" boolean will update based on "caterer" value
-  const [showCaterer] = useCondition(['otherCaterer'], conditions, getValues, control);
-
-  const { fields: guestFields, append: appendGuest } = useFieldArray({
-    control,
-    name: 'guests',
-  });
-
-  const onSubmit = (validVisibleFields: FormSchema) => {
-    // Do something with pruned & validated form submission!
-  };
+  const { register, handleSubmit, getValues, control } = methods;
+  const [showOtherOption] = useCondition(['otherCaterer'], conditions, getValues, control);
+  const { fields, append } = useFieldArray({ control, name: 'guests' });
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      {/* ... form fields go here */}
-      {guestFields.map((field, i) => (
-        <Guest key={field.id} index={i} />
-      ))}
-    </form>
+    <FormProvider {...methods}>
+      <form onSubmit={handleSubmit(data => console.log(data))}>
+        <label>
+          Caterer
+          <select {...register('caterer')}>
+            <option>Elephants Catering</option>
+            <option>Delta BBQ</option>
+            <option>Other</option>
+          </select>
+        </label>
+        {showOtherOption && (
+          <label>
+            Other caterer
+            <input {...register('otherCaterer')} />
+          </label>
+        )}
+        {fields.map((field, index) => (
+          <Guest key={field.id} index={index} />
+        ))}
+        <button type="button" onClick={() => append({ age: 0 })}>Add guest</button>
+        <button type="submit">Submit</button>
+      </form>
+    </FormProvider>
   );
 }
+```
 
-function Guest({ index }: { index: number }) {
+With RHF's default `shouldUnregister: false`, hidden inputs retain their editing values. Only the values passed to the resolver are pruned, so hidden invalid values do not block submission.
+
+## Array fields
+
+Use `#` in conditions to mean "the current array index". For example, `guests.#.wine` reads `guests.#.age` from the same guest. Multiple `#` segments support nested arrays.
+
+When rendering a row, pass its actual index to `useCondition()`. This child component uses the `FormProvider` from the example above:
+
+```tsx
+// Guest.tsx
+import { useFormContext } from 'react-hook-form';
+import { useCondition } from 'rhf-conditional-logic';
+import { type FormSchema, conditions } from './form-schema';
+
+export function Guest({ index }: { index: number }) {
   const { register, getValues, control } = useFormContext<FormSchema>();
-
-  // "showWineField" boolean will update based on "age" value
-  // for this particular field array index
-  const [showWineField] = useCondition(
+  const [showWine] = useCondition(
     [`guests.${index}.wine`],
     conditions,
     getValues,
     control
   );
 
-  return <fieldset>...</fieldset>;
+  return (
+    <fieldset>
+      <legend>Guest {index + 1}</legend>
+      <label>
+        Age
+        <input type="number" {...register(`guests.${index}.age`, { valueAsNumber: true })} />
+      </label>
+      {showWine && (
+        <label>
+          Wine
+          <select {...register(`guests.${index}.wine`)}>
+            <option>Red</option>
+            <option>White</option>
+            <option>None</option>
+          </select>
+        </label>
+      )}
+    </fieldset>
+  );
 }
 ```
 
-_Curious about the backstory of this library? Check out my article on [Type-Safe Conditional Logic in React Hook Forms + Zod](https://micahjon.com/2023/form-validation-with-zod/)._
+See the [working demo](tests-e2e/mock-form) for a complete form with nullable selections, field errors, and adding/removing guests.
 
-## Future improvements
+## Input and output types
 
-- Update `useCondition()` signature to allow for single field (instead of array).
-- Update `useCondition()` to use `useFormContext()` and allow for optionally passing fewer parameters to it.
+Use `useConditionalForm<Input, Context, Output>()` when a resolver produces a different type from the editing values. `getValues()`, defaults, conditions, and errors use **Input**; successful `handleSubmit()` callbacks receive **Output**.
+
+For example, this enum starts at null while editing but requires a selection on submission:
+
+```ts
+// nullable-form.ts
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useConditionalForm } from 'rhf-conditional-logic';
+import { z } from 'zod';
+
+const catererSchema = z.enum(['Elephants Catering', 'Delta BBQ', 'Other'], {
+  message: 'Please select a caterer',
+});
+const formSchema = z.object({
+  caterer: catererSchema.nullable().pipe(catererSchema),
+});
+
+type FormInput = z.input<typeof formSchema>; // caterer can be null
+type FormOutput = z.output<typeof formSchema>; // caterer cannot be null
+
+export function useCatererForm() {
+  return useConditionalForm<FormInput, unknown, FormOutput>({
+    conditions: {},
+    resolver: zodResolver(formSchema),
+    defaultValues: { caterer: null },
+  });
+}
+```
+
+Use `FieldConditions<FormInput>` for visibility rules and the same three generics in `useFormContext<FormInput, unknown, FormOutput>()` for nested components. Passing only `<FormInput>` defaults output to input.
+
+The nullable pipe above is for simple enums; do not apply a transforming schema twice.
+
+## Pruning values
+
+Use `pruneHiddenFields()` directly for drafts, autosave, summaries, or other code outside a form:
+
+```ts
+// prune-draft.ts
+import { pruneHiddenFields } from 'rhf-conditional-logic';
+import { type FormSchema, conditions } from './form-schema';
+
+const draft: FormSchema = {
+  caterer: 'Elephants Catering',
+  otherCaterer: 'A previous selection',
+  guests: [{ age: 12, wine: 'White' }],
+};
+
+const pruned = pruneHiddenFields(draft, conditions);
+// { caterer: 'Elephants Catering', guests: [{ age: 12 }] }
+// draft is unchanged
+```
+
+You can also pass RHF's getter: `pruneHiddenFields(getValues, conditions)`. Both forms infer their types from the input, support the same conditions and wildcard paths, and leave the original values unchanged. Conditions always read the original values, before any fields are removed.
+
+Pruning does not validate values or change their type. Resolver defaults/transforms can add fields back after pruning; avoid defaults on hidden fields unless that submitted value is intentional.
+
+_More background: [Type-Safe Conditional Logic in React Hook Forms + Zod](https://micahjon.com/2023/form-validation-with-zod/)._

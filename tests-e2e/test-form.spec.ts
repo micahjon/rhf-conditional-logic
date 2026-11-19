@@ -10,7 +10,7 @@ test('is the right page', async ({ page }) => {
   await page.goto('/');
 
   // Expect a title "to contain" a substring.
-  expect(page).toHaveTitle(/React Hook Form Conditional Logic Test/);
+  await expect(page).toHaveTitle(/React Hook Form Conditional Logic Test/);
 });
 
 test('conditional fields are shown when appropriate', async ({ page }) => {
@@ -29,6 +29,36 @@ test('conditional fields are shown when appropriate', async ({ page }) => {
 
   await page.getByLabel('21+').check();
   expect(await page.getByText('Wine Pairing')).toBeVisible();
+});
+
+test('unselected radios show required errors on initial submission and after reset', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Submit', exact: true }).click();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Please select a caterer' })
+  ).toBeVisible();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Please select an age' })
+  ).toBeVisible();
+
+  await page.getByLabel('Your Name').fill('Test');
+  await page.getByLabel('Email').fill('test@example.com');
+  await page.getByLabel('Delta BBQ').check();
+  await page.getByLabel('Guest Name').fill('Guest');
+  await page.getByLabel('13 - 20').check();
+  await page.getByRole('button', { name: 'Submit', exact: true }).click();
+  await expect(page.getByLabel('Your Name')).toBeEmpty();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Submit', exact: true }).click();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Please select a caterer' })
+  ).toBeVisible();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Please select an age' })
+  ).toBeVisible();
 });
 
 test('hidden field with invalid content is ignored', async ({ page }) => {
