@@ -5,12 +5,15 @@
 Compatibility with modern React Hook Form and both Zod 3 and 4 ([micahjon/rhf-conditional-logic#9](https://github.com/micahjon/rhf-conditional-logic/issues/9)).
 
 - **Breaking:** `react-hook-form` peer dependency is now `^7.55.0` (was `^7.0.0`).
+- **Breaking:** conditions cannot target entire array items (`guests.#` or `guests.0`). Use `useFieldArray()` for row removal; within-row field conditions and whole-row value lookups remain supported.
 - `useConditionalForm()` now mirrors `useForm()`'s three generics: `useConditionalForm<TInput, TContext, TOutput>()`. Submission callbacks receive the validated output type; editing values, errors, and conditions retain the input type. Output defaults to input for existing single-generic forms.
 - Resolvers retain RHF's strict input/output contract. With modern adapters, separately declared nullable blank types must match the schema's input, not just its output. The README and demo show a Zod 3/4-compatible nullable-input example.
 - `useCondition()` now accepts a `control` from a form whose output type differs from its input type.
 - Conditional path values delegate to installed RHF path-value types, preserving newer optional-parent/array-item semantics instead of relying on an outdated copy.
 - Explicitly re-export the `FieldConditions`, `FieldConditionPath`, and `GetValues` types from the package root.
 - `pruneHiddenFields(values, conditions)` now accepts a plain values object as an alternative to RHF's `getValues`, with inferred input/condition types and unchanged nonmutating pruning behavior. Existing getter calls remain supported.
+- The resolver wrapper prunes the values provided by RHF rather than reading `getValues()`, keeping pre-mount and reset validation aligned with RHF.
+- Zod raw mode returns pruned input; otherwise the resolver's parsed output is preserved, including defaults/transforms that may add fields back after pruning.
 - Add compile-time API regressions, hook integration tests, and standalone pruning tests. CI covers RHF 7.55/7.92 with Zod 3/4; resolver output, raw mode, custom sync/async resolvers, context, nested wildcards, and incomplete drafts are covered.
 - Reorganize the README around installation and usage examples for forms, array fields, distinct input/output types, and standalone pruning. Zod/resolver packages remain development-only dependencies.
 

@@ -118,7 +118,9 @@ function singleGenericStillWorks() {
     defaultValues: { contactName: '', contactEmail: '', caterer: null, guests: [] },
   });
   // Output defaults to the input shape when no third generic is provided
-  form.handleSubmit(data => expectType<BlankFormSchema>(data));
+  form.handleSubmit(data => {
+    type _outputDefaultsToInput = Expect<Equal<typeof data, BlankFormSchema>>;
+  });
 }
 
 // --- A resolver whose schema has no transform (input === output) -------------
@@ -328,12 +330,64 @@ function nestedPathValues(
   type _optionalArrayItem = Expect<
     Equal<typeof count, FieldPathValue<Input, `groups.${number}.details.count`>>
   >;
-  type _trailingWildcard = Expect<
+  const group = getValues('groups.#');
+  type _wholeRowLookup = Expect<
+    Equal<typeof group, FieldPathValue<Input, `groups.${number}`>>
+  >;
+  const [tupleGroup] = getValues(['groups.#', 'settings.enabled']);
+  type _wholeRowTupleLookup = Expect<Equal<typeof tupleGroup, typeof group>>;
+  type _nestedWildcard = Expect<
     Equal<
-      FieldConditionPath<{ 'groups.#.entries.#': () => boolean }>,
-      `groups.${number}.entries.${number}`
+      FieldConditionPath<{ 'groups.#.entries.#.detail': () => boolean }>,
+      `groups.${number}.entries.${number}.detail`
     >
   >;
+}
+
+function arrayConditionTargets() {
+  type Input = {
+    groups?: {
+      enabled: boolean;
+      note?: string;
+      entries: { detail?: string }[];
+      codes: { '0': string };
+    }[];
+    tags: string[];
+    pair: [{ note: string }, { note: string }];
+  };
+  const allowed = {
+    groups: () => true,
+    'groups.#.note': getValues => getValues('groups.#')?.enabled === true,
+    'groups.0.note': () => true,
+    'groups.#.entries.#.detail': () => true,
+    'groups.#.codes.0': () => true,
+    'pair.0.note': () => true,
+  } satisfies FieldConditions<Input>;
+
+  const badWildcard = {
+    // @ts-expect-error conditions cannot target whole array items
+    'groups.#': () => false,
+  } satisfies FieldConditions<Input>;
+  const badIndex = {
+    // @ts-expect-error numeric array-item targets are also unsupported
+    'groups.0': () => false,
+  } satisfies FieldConditions<Input>;
+  const badNestedWildcard = {
+    // @ts-expect-error nested whole-array-item targets are unsupported
+    'groups.#.entries.#': () => false,
+  } satisfies FieldConditions<Input>;
+  const badNestedIndex = {
+    // @ts-expect-error nested numeric array-item targets are unsupported
+    'groups.#.entries.0': () => false,
+  } satisfies FieldConditions<Input>;
+  const badPrimitiveItem = {
+    // @ts-expect-error primitive array items cannot be condition targets either
+    'tags.0': () => false,
+  } satisfies FieldConditions<Input>;
+  const badTupleItem = {
+    // @ts-expect-error tuple items cannot be condition targets
+    'pair.0': () => false,
+  } satisfies FieldConditions<Input>;
 }
 
 function legacyPolymorphicResolver(

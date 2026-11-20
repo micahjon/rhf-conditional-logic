@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { createElement } from 'react';
 import { act } from 'react-dom/test-utils';
 import { createRoot, Root } from 'react-dom/client';
-import { Resolver } from 'react-hook-form';
+import { Resolver, useForm } from 'react-hook-form';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
 import { FieldConditions, useCondition, useConditionalForm } from '../src';
@@ -46,7 +46,63 @@ const conditions = {
   note: getValues => getValues('showNote'),
 } satisfies FieldConditions<z.input<typeof schema>>;
 
+function renderValidityForms(shouldUnregister = false) {
+  const resolver = zodResolver(z.object({ count: z.string().min(1) }));
+  const nativeResolver = vi.fn(resolver);
+  const conditionalResolver = vi.fn(resolver);
+  const result = renderHook(() => {
+    const options = { defaultValues: { count: 'valid' }, shouldUnregister };
+    const native = useForm({ ...options, resolver: nativeResolver });
+    const conditional = useConditionalForm({
+      ...options,
+      conditions: {},
+      resolver: conditionalResolver,
+    });
+    return {
+      native,
+      conditional,
+      nativeIsValid: native.formState.isValid,
+      conditionalIsValid: conditional.formState.isValid,
+    };
+  });
+  return { result, nativeResolver, conditionalResolver };
+}
+
 describe('useConditionalForm()', () => {
+  test('validates RHF values rather than defaults before mount', async () => {
+    const { result, nativeResolver, conditionalResolver } = renderValidityForms(true);
+    await act(async () => {});
+    expect(nativeResolver).toHaveBeenCalled();
+    expect(nativeResolver.mock.lastCall?.[0]).toStrictEqual({});
+    expect(conditionalResolver.mock.lastCall?.[0]).toStrictEqual(
+      nativeResolver.mock.lastCall?.[0]
+    );
+    expect(result.current.nativeIsValid).toBe(false);
+    expect(result.current.conditionalIsValid).toBe(false);
+  });
+
+  test('matches RHF validity after resetting while keeping default values', async () => {
+    const { result, nativeResolver, conditionalResolver } = renderValidityForms();
+    await act(async () => {});
+    expect(result.current.conditionalIsValid).toBe(true);
+    nativeResolver.mockClear();
+    conditionalResolver.mockClear();
+
+    await act(async () => {
+      result.current.native.reset({}, { keepDefaultValues: true });
+      result.current.conditional.reset({}, { keepDefaultValues: true });
+    });
+    expect(nativeResolver).toHaveBeenCalled();
+    expect(conditionalResolver).toHaveBeenCalled();
+    expect(conditionalResolver.mock.lastCall?.[0]).toStrictEqual(
+      nativeResolver.mock.lastCall?.[0]
+    );
+    expect(result.current.conditionalIsValid).toBe(result.current.nativeIsValid);
+    expect(result.current.conditional.getValues()).toStrictEqual(
+      result.current.native.getValues()
+    );
+  });
+
   test('prunes before validation, submits transformed output, and preserves editing values', async () => {
     const result = renderHook(() => {
       const form = useConditionalForm<

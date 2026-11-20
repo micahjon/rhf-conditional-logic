@@ -12,7 +12,7 @@ import {
   FieldPathPlusHash,
   GetValues,
 } from '../types';
-import { hashIndexRegex, integerIndexRegex } from './regex';
+import { hashIndexRegex, integerIndexRegex, integerRegex } from './regex';
 import {
   getConditionKeyWithHashThatMatchesPath,
   swapOutHashesInFieldPath,
@@ -77,8 +77,27 @@ export function getConditionalLogic<
   conditions: TFieldConditions,
   getValues: GetValues<TFieldValues>
 ) {
+  const conditionKeys = objectKeys(conditions);
+  const arrayItemTarget =
+    conditionKeys.find(key => key.endsWith('.#')) ??
+    formFieldPaths.find(path => {
+      const separator = path.lastIndexOf('.');
+      return (
+        separator >= 0 &&
+        integerRegex.test(path.slice(separator + 1)) &&
+        Array.isArray(
+          getValues(path.slice(0, separator) as FieldPathPlusHash<TFieldValues>)
+        )
+      );
+    });
+  if (arrayItemTarget) {
+    throw new Error(
+      `Conditions cannot target entire array items ("${arrayItemTarget}"). Target a field within the item or remove the row with useFieldArray().`
+    );
+  }
+
   // All condition keys that are generic (have # to match any index)
-  const conditionKeysWithHashes = objectKeys(conditions).filter(key =>
+  const conditionKeysWithHashes = conditionKeys.filter(key =>
     hashIndexRegex.test(key)
   ) as (keyof TFieldConditions & string)[];
 

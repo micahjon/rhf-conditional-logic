@@ -1,6 +1,6 @@
 import { cloneDeep, get } from 'lodash-es';
 import { FieldValues, UseFormGetValues } from 'react-hook-form';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { FieldConditions, pruneHiddenFields } from '../src';
 
 // pruneHiddenFields() is what useConditionalForm() runs before validation. Test
@@ -139,11 +139,8 @@ describe.each(['values', 'getValues'] as const)(
       };
       const conditions = {
         'groups.#.entries.#.detail': getValues => {
-          const [enabled, selected] = getValues([
-            'groups.#.enabled',
-            'groups.#.entries.#.selected',
-          ]);
-          return enabled && selected === true;
+          const [group, entry] = getValues(['groups.#', 'groups.#.entries.#']);
+          return group.enabled && entry?.selected === true;
         },
       } satisfies FieldConditions<Draft>;
       const snapshot = cloneDeep(values);
@@ -162,6 +159,41 @@ describe.each(['values', 'getValues'] as const)(
         ],
       });
       expect(values).toStrictEqual(snapshot);
+    });
+
+    test.each([
+      ['groups.#', true],
+      ['groups.0', false],
+      ['groups.#.entries.#', false],
+      ['groups.#.entries.0', true],
+    ] as const)('rejects whole-array-item target %s', (path, visible) => {
+      const values = {
+        groups: [{ entries: [{ detail: 'keep' }] }],
+      };
+      const snapshot = cloneDeep(values);
+      const condition = vi.fn(() => visible);
+      expect(() => prune(values, { [path]: condition })).toThrow(
+        'Conditions cannot target entire array items'
+      );
+      expect(condition).not.toHaveBeenCalled();
+      expect(values).toStrictEqual(snapshot);
+    });
+
+    test('rejects a whole-item wildcard even when the array is empty', () => {
+      const values: { groups: { detail: string }[] } = { groups: [] };
+      expect(() =>
+        prune(values, {
+          // @ts-expect-error exercise invalid JavaScript configuration
+          'groups.#': () => false,
+        })
+      ).toThrow('Conditions cannot target entire array items');
+    });
+
+    test('still permits numeric object-property targets', () => {
+      const values = { codes: { '0': 'remove', '1': 'keep' } };
+      expect(prune(values, { 'codes.0': () => false })).toStrictEqual({
+        codes: { '1': 'keep' },
+      });
     });
 
     test('evaluates every condition against the unpruned values', () => {

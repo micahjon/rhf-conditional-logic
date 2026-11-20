@@ -119,6 +119,8 @@ With RHF's default `shouldUnregister: false`, hidden inputs retain their editing
 
 Use `#` in conditions to mean "the current array index". For example, `guests.#.wine` reads `guests.#.age` from the same guest. Multiple `#` segments support nested arrays.
 
+Conditions can target fields within a row, but not an entire array item (`guests.#` or `guests.0`). Use `useFieldArray().remove(index)` to remove rows. Within a field condition, `getValues('guests.#')` can still read the current guest.
+
 When rendering a row, pass its actual index to `useCondition()`. This child component uses the `FormProvider` from the example above:
 
 ```tsx
@@ -192,6 +194,8 @@ export function useCatererForm() {
 ```
 
 Use `FieldConditions<FormInput>` for visibility rules and the same three generics in `useFormContext<FormInput, unknown, FormOutput>()` for nested components. Passing only `<FormInput>` defaults output to input.
+
+With `zodResolver(schema, undefined, { raw: true })`, validation still runs, but successful `handleSubmit()` callbacks receive the pruned input rather than parsed output. Leave the output type equal to the input type.
 
 The nullable pipe above is for simple enums; do not apply a transforming schema twice.
 

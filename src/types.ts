@@ -35,14 +35,33 @@ import {
 
 /**
  * Map of field names to field conditions (functions that accept a getValues()
- * function and return a boolean)
+ * function and return a boolean). Array items can be read by conditions but
+ * cannot be condition targets.
  */
 export type FieldConditions<TFieldValues extends FieldValues> = Partial<
   Record<
-    FieldPathPlusHash<TFieldValues>,
+    FieldConditionTargetPath<TFieldValues, FieldPathPlusHash<TFieldValues>>,
     (getValue: GetValues<TFieldValues>) => boolean
   >
 >;
+
+type ParentPath<TPath extends string> = TPath extends `${infer Head}.${infer Rest}`
+  ? Rest extends `${string}.${string}`
+    ? `${Head}.${ParentPath<Rest>}`
+    : Head
+  : never;
+
+type FieldConditionTargetPath<
+  TFieldValues extends FieldValues,
+  TPath extends FieldPathPlusHash<TFieldValues>,
+> = TPath extends `${string}.${string}`
+  ? Extract<
+      PathValueCL<TFieldValues, ParentPath<TPath> & FieldPathPlusHash<TFieldValues>>,
+      ReadonlyArray<unknown>
+    > extends never
+    ? TPath
+    : never
+  : TPath;
 
 /**
  * All the form field paths that have conditional logic associated with them

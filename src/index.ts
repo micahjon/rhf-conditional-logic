@@ -189,11 +189,11 @@ export function useConditionalForm<
   // Wrap the resolver to prune hidden fields before validating, so hidden
   // invalid values don't block validation or end up in the submission.
   const conditionalResolver: Resolver<TFieldValues, TContext, TTransformedValues> = (
-    _values,
+    values,
     context,
     options
   ) => {
-    const prunedValues = pruneHiddenFields(formMethods.getValues, conditions);
+    const prunedValues = pruneHiddenFields(values, conditions);
     return resolver(prunedValues, context, options);
   };
 
