@@ -87,6 +87,12 @@ export function getConditionalLogic<
   >(formFieldPaths, conditions, getValues, getValues);
 }
 
+/**
+ * Return visibility flags in the same order as the requested concrete field paths.
+ * Exact conditions take precedence over wildcard conditions; this does not prune values.
+ * Condition reads use getValues so callers can track dependencies. Guard probes use
+ * getUntrackedValues to avoid subscribing the UI to fields the conditions never read.
+ */
 function evaluateConditionalLogic<
   TFieldValues extends FieldValues,
   TFieldNames extends FieldPath<TFieldValues>[],
@@ -100,6 +106,8 @@ function evaluateConditionalLogic<
   getUntrackedValues: GetValues<TFieldValues>
 ) {
   const conditionKeys = objectKeys(conditions);
+  // Reject whole-row targets before running conditions. Numeric keys can also be
+  // object properties, so inspect the parent instead of rejecting every numeric key.
   const arrayItemTarget =
     conditionKeys.find(key => key.endsWith('.#')) ??
     formFieldPaths.find(path => {
