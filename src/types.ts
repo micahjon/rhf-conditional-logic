@@ -43,7 +43,8 @@ export type FieldConditions<TFieldValues extends FieldValues> = Partial<
     FieldConditionTargetPath<TFieldValues, FieldPathPlusHash<TFieldValues>>,
     (getValue: GetValues<TFieldValues>) => boolean
   >
->;
+> &
+  (TFieldValues extends ReadonlyArray<unknown> ? never : unknown);
 
 type ParentPath<TPath extends string> = TPath extends `${infer Head}.${infer Rest}`
   ? Rest extends `${string}.${string}`

@@ -27,6 +27,10 @@ import { getByPath } from './utils/get-by-path';
 // Public API
 //
 
+// Functions expose Symbol.hasInstance. This guard excludes callable values
+// without conditional types that would reject generic object callers.
+type NonCallableValues = { readonly [Symbol.hasInstance]?: never };
+
 /**
  * Hook to expose conditional logic to RHF form components
  * @param fieldNamePaths One or more field name paths (e.g. "guests.1.winePairing")
@@ -73,7 +77,7 @@ export function pruneHiddenFields<
   conditions: TFieldConditions
 ): TFieldValues;
 export function pruneHiddenFields<TFieldValues extends FieldValues>(
-  values: TFieldValues,
+  values: TFieldValues & NonCallableValues,
   conditions: FieldConditions<TFieldValues>
 ): TFieldValues;
 export function pruneHiddenFields<
@@ -85,6 +89,11 @@ export function pruneHiddenFields<
 ): TFieldValues {
   const initialValues =
     typeof valuesOrGetValues === 'function' ? valuesOrGetValues() : valuesOrGetValues;
+  if (Array.isArray(initialValues)) {
+    throw new Error(
+      'Form values must be an object, not a root array. Put array fields inside the form object.'
+    );
+  }
   const getValueAtPath = getByPath(initialValues);
 
   function getSnapshotValues<TFieldName extends FieldPathCL<TFieldValues>>(

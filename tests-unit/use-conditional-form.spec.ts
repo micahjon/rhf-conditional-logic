@@ -6,7 +6,12 @@ import { createRoot, Root } from 'react-dom/client';
 import { Resolver, useForm } from 'react-hook-form';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
-import { FieldConditions, useCondition, useConditionalForm } from '../src';
+import {
+  FieldConditions,
+  pruneHiddenFields,
+  useCondition,
+  useConditionalForm,
+} from '../src';
 import {
   conditions as demoConditions,
   formSchema,
@@ -69,6 +74,41 @@ function renderValidityForms(shouldUnregister = false) {
 }
 
 describe('useConditionalForm()', () => {
+  test.each([undefined, { enabled: undefined }, { enabled: false }, { enabled: null }])(
+    'matches RHF dotted-key lookups with nested flags %j',
+    flags => {
+      type Values = {
+        'flags.enabled': boolean;
+        flags?: { enabled?: boolean | null };
+        detail: string;
+      };
+      const values: Values = {
+        'flags.enabled': true,
+        flags,
+        detail: 'keep',
+      };
+      const result = renderHook(() => useForm<Values>({ defaultValues: values }));
+      const observed = vi.fn();
+      const conditions = {
+        detail: getValues => {
+          const enabled = getValues('flags.enabled');
+          const [tupleEnabled] = getValues(['flags.enabled']);
+          observed(enabled, tupleEnabled);
+          return enabled === true;
+        },
+      } satisfies FieldConditions<Values>;
+      const expected = result.current.getValues('flags.enabled');
+      const fromGetter = pruneHiddenFields(result.current.getValues, conditions);
+      const fromValues = pruneHiddenFields(result.current.getValues(), conditions);
+      expect(fromValues).toStrictEqual(fromGetter);
+      expect(observed).toHaveBeenCalledTimes(2);
+      expect(observed).toHaveBeenNthCalledWith(1, expected, expected);
+      expect(observed).toHaveBeenNthCalledWith(2, expected, expected);
+      expect('detail' in fromValues).toBe(expected === true);
+      expect(result.current.getValues('detail')).toBe('keep');
+    }
+  );
+
   test('validates RHF values rather than defaults before mount', async () => {
     const { result, nativeResolver, conditionalResolver } = renderValidityForms(true);
     await act(async () => {});

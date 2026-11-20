@@ -203,6 +203,8 @@ The nullable pipe above is for simple enums; do not apply a transforming schema 
 
 Use `pruneHiddenFields()` directly for drafts, autosave, summaries, or other code outside a form:
 
+The form root must be an object. Put arrays in named fields (for example, `{ guests: [...] }`), rather than passing a root array.
+
 ```ts
 // prune-draft.ts
 import { pruneHiddenFields } from 'rhf-conditional-logic';

@@ -196,6 +196,17 @@ describe.each(['values', 'getValues'] as const)(
       });
     });
 
+    test('rejects root arrays instead of silently ignoring their wildcards', () => {
+      const values = [{ visible: false, note: 'hidden' }];
+      const condition = vi.fn(() => false);
+      // @ts-expect-error exercise unsupported JavaScript form values
+      expect(() => prune(values, { '#.note': condition })).toThrow(
+        'Form values must be an object, not a root array'
+      );
+      expect(condition).not.toHaveBeenCalled();
+      expect(values).toStrictEqual([{ visible: false, note: 'hidden' }]);
+    });
+
     test('evaluates every condition against the unpruned values', () => {
       type Values = { first?: string; second?: string };
       const values: Values = { first: 'present', second: 'keep' };

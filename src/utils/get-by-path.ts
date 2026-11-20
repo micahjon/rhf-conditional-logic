@@ -10,9 +10,9 @@ export function getByPath(object: Record<string, unknown>) {
       if (value && typeof value === 'object' && key in value) {
         value = value[key];
       } else {
-        return undefined;
+        return object[path];
       }
     }
-    return value;
+    return value === undefined ? object[path] : value;
   };
 }

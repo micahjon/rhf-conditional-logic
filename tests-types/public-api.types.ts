@@ -195,6 +195,47 @@ function pruneGenericValues<T extends FieldValues>(
   type _result = Expect<Equal<typeof result, T>>;
 }
 
+function pruneRejectsInvalidGetterConditions(
+  getValues: UseFormGetValues<{ enabled: boolean; detail?: string }>
+) {
+  // @ts-expect-error an invalid getter condition cannot fall through to the values overload
+  pruneHiddenFields(getValues, { missing: () => false });
+}
+
+function pruneInterfaceValues() {
+  interface Values {
+    enabled: boolean;
+    detail?: string;
+  }
+  const values: Values = { enabled: true, detail: 'keep' };
+  const result = pruneHiddenFields(values, {
+    detail: getValues => getValues('enabled'),
+  });
+  type _result = Expect<Equal<typeof result, Values>>;
+}
+
+function rejectsRootArrays(
+  values: { visible: boolean; note?: string }[],
+  getValues: UseFormGetValues<{ visible: boolean; note?: string }[]>
+) {
+  // @ts-expect-error array fields must be nested inside a form object
+  pruneHiddenFields(values, {});
+  // @ts-expect-error root-array getters are unsupported too
+  pruneHiddenFields(getValues, {});
+  // @ts-expect-error root wildcard conditions are unsupported
+  const rootConditions: FieldConditions<typeof values> = {
+    '#.note': () => false,
+  };
+  useConditionalForm<typeof values>({
+    // @ts-expect-error root arrays cannot be conditional-form inputs
+    conditions: {},
+    resolver: zodResolver(
+      z.array(z.object({ visible: z.boolean(), note: z.string().optional() }))
+    ),
+    defaultValues: [],
+  });
+}
+
 function inferredTransformedSchema() {
   const schema = z.object({
     count: z.string().transform(Number),
