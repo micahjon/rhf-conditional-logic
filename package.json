@@ -26,7 +26,7 @@
     "test:types": "tsc --noEmit -p tsconfig.types.json",
     "lint:scripts": "eslint . --ext .ts",
     "format:scripts": "prettier . --write",
-    "pub": "npm run build && npm publish",
+    "pub": "node ./scripts/check-stable-version.mjs && npm run build && npm publish --tag latest",
     "pub:beta": "npm run build && npm publish --tag beta"
   },
   "dependencies": {

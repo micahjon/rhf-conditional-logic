@@ -56,10 +56,11 @@ export function getConditionalLogicWithDependencies<
   // For each field the user requested, determine whether it should be visible (and
   // included in form data) or not. As we evaluate these conditions, we track
   // depedencies
-  const formFieldVisibility = getConditionalLogic(
+  const formFieldVisibility = evaluateConditionalLogic(
     formFieldPaths,
     conditions,
-    getDependencyValue
+    getDependencyValue,
+    getValues
   );
 
   return { formFieldVisibility, dependencies };
@@ -77,6 +78,27 @@ export function getConditionalLogic<
   conditions: TFieldConditions,
   getValues: GetValues<TFieldValues>
 ) {
+  return evaluateConditionalLogic<
+    TFieldValues,
+    TFieldNames,
+    TFieldNamesParam,
+    TFieldConditions,
+    TConditionPath
+  >(formFieldPaths, conditions, getValues, getValues);
+}
+
+function evaluateConditionalLogic<
+  TFieldValues extends FieldValues,
+  TFieldNames extends FieldPath<TFieldValues>[],
+  TFieldNamesParam extends readonly [...TFieldNames],
+  TFieldConditions extends FieldConditions<TFieldValues>,
+  TConditionPath extends FieldConditionPath<TFieldConditions>,
+>(
+  formFieldPaths: readonly [...TConditionPath[]],
+  conditions: TFieldConditions,
+  getValues: GetValues<TFieldValues>,
+  getUntrackedValues: GetValues<TFieldValues>
+) {
   const conditionKeys = objectKeys(conditions);
   const arrayItemTarget =
     conditionKeys.find(key => key.endsWith('.#')) ??
@@ -86,7 +108,9 @@ export function getConditionalLogic<
         separator >= 0 &&
         integerRegex.test(path.slice(separator + 1)) &&
         Array.isArray(
-          getValues(path.slice(0, separator) as FieldPathPlusHash<TFieldValues>)
+          getUntrackedValues(
+            path.slice(0, separator) as FieldPathPlusHash<TFieldValues>
+          )
         )
       );
     });

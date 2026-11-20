@@ -102,6 +102,50 @@ test('Tracks concrete dependencies for wildcard lookups of multiple fields', () 
   ]);
 });
 
+test.each([false, true])(
+  'tracks only condition reads for numeric object keys (reads parent: %s)',
+  readsParent => {
+    const values = { flag: true, codes: { '0': 'keep' } };
+    const getValues = ((paths: string | readonly string[]) =>
+      Array.isArray(paths)
+        ? paths.map(path => get(values, path))
+        : get(values, paths)) as UseFormGetValues<typeof values>;
+    const conditions = {
+      'codes.0': getValues =>
+        readsParent
+          ? getValues('codes')['0'] === 'keep' && getValues('flag')
+          : getValues('flag'),
+    } satisfies FieldConditions<typeof values>;
+    const result = getConditionalLogicWithDependencies(
+      ['codes.0'],
+      conditions,
+      getValues
+    );
+    expect(result.formFieldVisibility).toStrictEqual([true]);
+    expect([...result.dependencies]).toStrictEqual(
+      readsParent ? ['codes', 'flag'] : ['flag']
+    );
+  }
+);
+
+test('rejects numeric array-item targets without evaluating their conditions', () => {
+  const values = { codes: ['keep'], flag: true };
+  const getValues = ((paths: string | readonly string[]) =>
+    Array.isArray(paths)
+      ? paths.map(path => get(values, path))
+      : get(values, paths)) as UseFormGetValues<typeof values>;
+  const condition = vi.fn(() => true);
+  expect(() =>
+    getConditionalLogicWithDependencies(
+      // @ts-expect-error exercise an invalid JavaScript condition target
+      ['codes.0'],
+      { 'codes.0': condition },
+      getValues
+    )
+  ).toThrow('Conditions cannot target entire array items');
+  expect(condition).not.toHaveBeenCalled();
+});
+
 describe('mocking console.warn...', () => {
   const consoleWarnMock = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   afterAll(() => {

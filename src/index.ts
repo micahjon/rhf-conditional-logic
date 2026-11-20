@@ -5,6 +5,7 @@ import {
   UseFormGetValues,
   UseFormProps,
   UseFormReturn,
+  get,
   useForm,
   useWatch,
 } from 'react-hook-form';
@@ -21,7 +22,6 @@ import {
   getConditionalLogicWithDependencies,
 } from './utils/conditional-logic';
 import { deleteByPathWithoutMutation } from './utils/delete-by-path';
-import { getByPath } from './utils/get-by-path';
 
 //
 // Public API
@@ -94,7 +94,7 @@ export function pruneHiddenFields<
       'Form values must be an object, not a root array. Put array fields inside the form object.'
     );
   }
-  const getValueAtPath = getByPath(initialValues);
+  const getValueAtPath = (path: string) => get(initialValues, path);
 
   function getSnapshotValues<TFieldName extends FieldPathCL<TFieldValues>>(
     name: TFieldName
@@ -137,7 +137,7 @@ export function pruneHiddenFields<
         for (const path of pathsToTransform) {
           const partsBeforeHash = path.split('.').slice(0, hashIndex);
           const partsAfterHash = path.split('.').slice(hashIndex + 1);
-          const expectedArray = getByPath(values)(partsBeforeHash.join('.'));
+          const expectedArray = getValueAtPath(partsBeforeHash.join('.'));
           if (Array.isArray(expectedArray)) {
             expectedArray.forEach((_, index) => {
               nextPathsToTransform.push(

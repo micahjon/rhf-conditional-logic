@@ -6,6 +6,8 @@ Compatibility with modern React Hook Form and both Zod 3 and 4 ([micahjon/rhf-co
 
 - **Breaking:** `react-hook-form` peer dependency is now `^7.55.0` (was `^7.0.0`).
 - **Breaking:** conditions cannot target entire array items (`guests.#` or `guests.0`). Use `useFieldArray()` for row removal; within-row field conditions and whole-row value lookups remain supported.
+- Array-item guard reads do not become watched dependencies; numeric object-key conditions only watch the values their visibility rules actually read.
+- Generate condition-target paths directly instead of resolving every path's parent type, avoiding excessive type instantiation on large nested forms.
 - Root-array forms are rejected instead of silently skipping their wildcard conditions; array fields inside form objects remain supported.
 - `useConditionalForm()` now mirrors `useForm()`'s three generics: `useConditionalForm<TInput, TContext, TOutput>()`. Submission callbacks receive the validated output type; editing values, errors, and conditions retain the input type. Output defaults to input for existing single-generic forms.
 - Resolvers retain RHF's strict input/output contract. With modern adapters, separately declared nullable blank types must match the schema's input, not just its output. The README and demo show a Zod 3/4-compatible nullable-input example.
@@ -14,10 +16,12 @@ Compatibility with modern React Hook Form and both Zod 3 and 4 ([micahjon/rhf-co
 - Explicitly re-export the `FieldConditions`, `FieldConditionPath`, and `GetValues` types from the package root.
 - `pruneHiddenFields(values, conditions)` now accepts a plain values object as an alternative to RHF's `getValues`, with inferred input/condition types and unchanged nonmutating pruning behavior. Existing getter calls remain supported.
 - Invalid getter conditions cannot fall through to the values overload. Plain-values dependency lookups match RHF's fallback to literal dotted keys when nested values are undefined.
+- Pruning uses RHF's exported `get` helper so its dependency lookups stay aligned with UI visibility.
 - The resolver wrapper prunes the values provided by RHF rather than reading `getValues()`, keeping pre-mount and reset validation aligned with RHF.
 - Zod raw mode returns pruned input; otherwise the resolver's parsed output is preserved, including defaults/transforms that may add fields back after pruning.
 - Add compile-time API regressions, hook integration tests, and standalone pruning tests. CI covers RHF 7.55/7.92 with Zod 3/4; resolver output, raw mode, custom sync/async resolvers, context, nested wildcards, and incomplete drafts are covered.
 - Reorganize the README around installation and usage examples for forms, array fields, distinct input/output types, and standalone pruning. Zod/resolver packages remain development-only dependencies.
+- `npm run pub` refuses prerelease versions before building or publishing; use `npm run pub:beta` to publish a beta with its explicit dist-tag.
 
 ## [0.1.2] - 2024-10-12
 

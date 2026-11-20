@@ -74,6 +74,44 @@ function renderValidityForms(shouldUnregister = false) {
 }
 
 describe('useConditionalForm()', () => {
+  test('does not watch numeric-keyed target parents unless the condition reads them', () => {
+    type Values = {
+      flag: boolean;
+      codes: { '0': string; other: string };
+    };
+    const conditions = {
+      'codes.0': getValues => getValues('flag'),
+    } satisfies FieldConditions<Values>;
+    const render = vi.fn();
+    let form: ReturnType<typeof useForm<Values>>;
+    function Harness() {
+      form = useForm<Values>({
+        defaultValues: { flag: true, codes: { '0': '', other: '' } },
+      });
+      const [visible] = useCondition(
+        ['codes.0'],
+        conditions,
+        form.getValues,
+        form.control
+      );
+      render(visible);
+      return null;
+    }
+    const root = createRoot(document.createElement('div'));
+    roots.push(root);
+    act(() => root.render(createElement(Harness)));
+    render.mockClear();
+
+    act(() => form.setValue('codes.other', 'unrelated edit'));
+    expect(render).not.toHaveBeenCalled();
+    act(() => form.setValue('codes.0', 'target edit'));
+    expect(render).not.toHaveBeenCalled();
+
+    act(() => form.setValue('flag', false));
+    expect(render).toHaveBeenCalledOnce();
+    expect(render).toHaveBeenLastCalledWith(false);
+  });
+
   test.each([undefined, { enabled: undefined }, { enabled: false }, { enabled: null }])(
     'matches RHF dotted-key lookups with nested flags %j',
     flags => {
@@ -108,6 +146,40 @@ describe('useConditionalForm()', () => {
       expect(result.current.getValues('detail')).toBe('keep');
     }
   );
+
+  test('uses RHF primitive-property and bracket-path lookups when pruning', () => {
+    type Values = {
+      text: string;
+      'text.length': number;
+      rows: { selected: boolean }[];
+      'rows[0].selected': boolean;
+      detail: string;
+    };
+    const values: Values = {
+      text: 'abc',
+      'text.length': 1,
+      rows: [{ selected: true }],
+      'rows[0].selected': false,
+      detail: 'keep',
+    };
+    const result = renderHook(() => useForm<Values>({ defaultValues: values }));
+    const observed = vi.fn();
+    const conditions = {
+      detail: getValues => {
+        const length = getValues('text.length');
+        const [tupleLength, selected] = getValues(['text.length', 'rows[0].selected']);
+        observed(length, tupleLength, selected);
+        return length === 3 && selected === true;
+      },
+    } satisfies FieldConditions<Values>;
+    const fromGetter = pruneHiddenFields(result.current.getValues, conditions);
+    const fromValues = pruneHiddenFields(result.current.getValues(), conditions);
+    expect(fromValues).toStrictEqual(fromGetter);
+    expect(fromValues.detail).toBe('keep');
+    expect(observed).toHaveBeenNthCalledWith(1, 3, 3, true);
+    expect(observed).toHaveBeenNthCalledWith(2, 3, 3, true);
+    expect(result.current.getValues()).toStrictEqual(values);
+  });
 
   test('validates RHF values rather than defaults before mount', async () => {
     const { result, nativeResolver, conditionalResolver } = renderValidityForms(true);

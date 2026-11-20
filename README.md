@@ -121,6 +121,8 @@ Use `#` in conditions to mean "the current array index". For example, `guests.#.
 
 Conditions can target fields within a row, but not an entire array item (`guests.#` or `guests.0`). Use `useFieldArray().remove(index)` to remove rows. Within a field condition, `getValues('guests.#')` can still read the current guest.
 
+For object properties with numeric keys, ensure RHF retains the parent as an object, or use nonnumeric keys. If the parent is absent, registering `codes.0` can make RHF create an array, which is rejected as a whole-item condition target.
+
 When rendering a row, pass its actual index to `useCondition()`. This child component uses the `FormProvider` from the example above:
 
 ```tsx

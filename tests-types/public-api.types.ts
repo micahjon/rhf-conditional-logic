@@ -431,6 +431,28 @@ function arrayConditionTargets() {
   } satisfies FieldConditions<Input>;
 }
 
+function largeNestedConditions() {
+  type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  type Entry = Partial<Record<`field${Digit | 10 | 11}`, string>> & {
+    detail?: string;
+    children?: { flag: boolean; note?: string }[];
+  };
+  type Input = Record<
+    `group${0 | 1 | 2 | 3 | 4}${Digit}`,
+    {
+      enabled: boolean;
+      details: { title: string; note?: string };
+      entries: Entry[];
+    }
+  >;
+  const conditions = {
+    'group00.entries.#.detail': getValues => getValues('group00.enabled'),
+  } satisfies FieldConditions<Input>;
+  type _target = Expect<
+    Equal<FieldConditionPath<typeof conditions>, `group00.entries.${number}.detail`>
+  >;
+}
+
 function legacyPolymorphicResolver(
   resolver: <Input extends FieldValues, Context>(
     values: Input,

@@ -39,30 +39,9 @@ import {
  * cannot be condition targets.
  */
 export type FieldConditions<TFieldValues extends FieldValues> = Partial<
-  Record<
-    FieldConditionTargetPath<TFieldValues, FieldPathPlusHash<TFieldValues>>,
-    (getValue: GetValues<TFieldValues>) => boolean
-  >
+  Record<PathCL<TFieldValues, true>, (getValue: GetValues<TFieldValues>) => boolean>
 > &
   (TFieldValues extends ReadonlyArray<unknown> ? never : unknown);
-
-type ParentPath<TPath extends string> = TPath extends `${infer Head}.${infer Rest}`
-  ? Rest extends `${string}.${string}`
-    ? `${Head}.${ParentPath<Rest>}`
-    : Head
-  : never;
-
-type FieldConditionTargetPath<
-  TFieldValues extends FieldValues,
-  TPath extends FieldPathPlusHash<TFieldValues>,
-> = TPath extends `${string}.${string}`
-  ? Extract<
-      PathValueCL<TFieldValues, ParentPath<TPath> & FieldPathPlusHash<TFieldValues>>,
-      ReadonlyArray<unknown>
-    > extends never
-    ? TPath
-    : never
-  : TPath;
 
 /**
  * All the form field paths that have conditional logic associated with them
@@ -121,6 +100,12 @@ export type GetValues<TFieldValues extends FieldValues> = {
  */
 export type FieldPathPlusHash<TFieldValues extends FieldValues> = PathCL<TFieldValues>;
 
+type PathLeafCL<
+  K extends string | number,
+  TConditionTarget extends boolean,
+  TArrayItem extends boolean,
+> = TConditionTarget extends true ? (TArrayItem extends true ? never : `${K}`) : `${K}`;
+
 /**
  * Helper type for recursively constructing paths through a type.
  * This actually constructs the strings and recurses into nested
@@ -144,25 +129,29 @@ export type FieldPathPlusHash<TFieldValues extends FieldValues> = PathCL<TFieldV
  *
  * See {@link PathCL}
  */
-type PathImplCL<K extends string | number, V, TraversedTypes> = V extends
-  | Primitive
-  | BrowserNativeObject
-  ? `${K}`
+type PathImplCL<
+  K extends string | number,
+  V,
+  TraversedTypes,
+  TConditionTarget extends boolean,
+  TArrayItem extends boolean,
+> = V extends Primitive | BrowserNativeObject
+  ? PathLeafCL<K, TConditionTarget, TArrayItem>
   : // Check so that we don't recurse into the same type
   // by ensuring that the types are mutually assignable
   // mutually required to avoid false positives of subtypes
   true extends AnyIsEqual<TraversedTypes, V>
-  ? `${K}`
+  ? PathLeafCL<K, TConditionTarget, TArrayItem>
   : K extends number
   ?
-      | `${K}`
-      | `${K}.${PathInternalCL<V, TraversedTypes | V>}`
-      // Note: this is a departure from React Hook Form's types. We allow
-      // user to use the hash to mean "the current index", so they can
-      // define a single condition for all possible indices in an array.
-      | `#`
-      | `#.${PathInternalCL<V, TraversedTypes | V>}`
-  : `${K}` | `${K}.${PathInternalCL<V, TraversedTypes | V>}`;
+      | PathLeafCL<K, TConditionTarget, TArrayItem>
+      | `${K}.${PathInternalCL<V, TraversedTypes | V, TConditionTarget>}`
+      // Whole rows remain readable, but cannot be condition targets.
+      | (TConditionTarget extends true ? never : '#')
+      | `#.${PathInternalCL<V, TraversedTypes | V, TConditionTarget>}`
+  :
+      | PathLeafCL<K, TConditionTarget, TArrayItem>
+      | `${K}.${PathInternalCL<V, TraversedTypes | V, TConditionTarget>}`;
 
 /**
  * Type to evaluate the type which the given path points to.
@@ -264,14 +253,30 @@ type AnyIsEqual<T1, T2> = T1 extends T2
  *
  * See {@link PathCL}
  */
-type PathInternalCL<T, TraversedTypes = T> = T extends ReadonlyArray<infer V>
+type PathInternalCL<
+  T,
+  TraversedTypes,
+  TConditionTarget extends boolean,
+> = T extends ReadonlyArray<infer V>
   ? IsTuple<T> extends true
     ? {
-        [K in TupleKeys<T>]-?: PathImplCL<K & string, T[K], TraversedTypes>;
+        [K in TupleKeys<T>]-?: PathImplCL<
+          K & string,
+          T[K],
+          TraversedTypes,
+          TConditionTarget,
+          true
+        >;
       }[TupleKeys<T>]
-    : PathImplCL<ArrayKey, V, TraversedTypes>
+    : PathImplCL<ArrayKey, V, TraversedTypes, TConditionTarget, true>
   : {
-      [K in keyof T]-?: PathImplCL<K & string, T[K], TraversedTypes>;
+      [K in keyof T]-?: PathImplCL<
+        K & string,
+        T[K],
+        TraversedTypes,
+        TConditionTarget,
+        false
+      >;
     }[keyof T];
 
 /**
@@ -284,7 +289,9 @@ type PathInternalCL<T, TraversedTypes = T> = T extends ReadonlyArray<infer V>
  */
 // We want to explode the union type and process each individually
 // so assignable types don't leak onto the stack from the base.
-export type PathCL<T> = T extends any ? PathInternalCL<T> : never;
+export type PathCL<T, TConditionTarget extends boolean = false> = T extends any
+  ? PathInternalCL<T, T, TConditionTarget>
+  : never;
 
 /**
  * See {@link PathCL}
