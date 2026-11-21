@@ -20,19 +20,9 @@ import {
 
 export function assertValidConditionTargets<TFieldValues extends FieldValues>(
   formFieldPaths: readonly string[],
-  conditions: FieldConditions<TFieldValues>,
+  conditionKeys: readonly string[],
   getUntrackedValues: GetValues<TFieldValues>
 ) {
-  const conditionKeys = objectKeys(conditions);
-  const bracketTarget = conditionKeys.find(
-    key => key.includes('[') || key.includes(']')
-  );
-  if (bracketTarget) {
-    throw new Error(
-      `Condition targets must use dot-separated paths, not bracket notation ("${bracketTarget}").`
-    );
-  }
-
   // Numeric keys can also be object properties, so inspect the parent.
   const arrayItemTarget =
     conditionKeys.find(key => key.endsWith('.#')) ??
@@ -65,6 +55,8 @@ export function getConditionalLogicWithDependencies<
   conditions: TFieldConditions,
   getValues: UseFormGetValues<TFieldValues>
 ) {
+  const conditionKeys = objectKeys(conditions);
+  assertValidConditionTargets(formFieldPaths, conditionKeys, getValues);
   // Whenever a user looks up a value in a conditional logic function, we track
   // its field name as a depedency of the conditional field
   const dependencies: Set<FieldPath<TFieldValues>> = new Set();
@@ -97,7 +89,7 @@ export function getConditionalLogicWithDependencies<
     formFieldPaths,
     conditions,
     getDependencyValue,
-    getValues
+    conditionKeys
   );
 
   return { formFieldVisibility, dependencies };
@@ -115,22 +107,24 @@ export function getConditionalLogic<
   conditions: TFieldConditions,
   getValues: GetValues<TFieldValues>
 ) {
+  const conditionKeys = objectKeys(conditions);
+  assertValidConditionTargets(formFieldPaths, conditionKeys, getValues);
   return evaluateConditionalLogic<
     TFieldValues,
     TFieldNames,
     TFieldNamesParam,
     TFieldConditions,
     TConditionPath
-  >(formFieldPaths, conditions, getValues, getValues);
+  >(formFieldPaths, conditions, getValues, conditionKeys);
 }
 
 /**
  * Return visibility flags in the same order as the requested concrete field paths.
  * Exact conditions take precedence over wildcard conditions; this does not prune values.
- * Condition reads use getValues so callers can track dependencies. Guard probes use
- * getUntrackedValues to avoid subscribing the UI to fields the conditions never read.
+ * Condition reads use getValues so callers can track dependencies. Callers validate
+ * targets first with an untracked getter, so guards never become UI dependencies.
  */
-function evaluateConditionalLogic<
+export function evaluateConditionalLogic<
   TFieldValues extends FieldValues,
   TFieldNames extends FieldPath<TFieldValues>[],
   TFieldNamesParam extends readonly [...TFieldNames],
@@ -140,22 +134,20 @@ function evaluateConditionalLogic<
   formFieldPaths: readonly [...TConditionPath[]],
   conditions: TFieldConditions,
   getValues: GetValues<TFieldValues>,
-  getUntrackedValues: GetValues<TFieldValues>
+  conditionKeys: readonly string[]
 ) {
-  assertValidConditionTargets(formFieldPaths, conditions, getUntrackedValues);
-  const conditionKeys = objectKeys(conditions);
-
-  // All condition keys that are generic (have # to match any index)
-  const conditionKeysWithHashes = conditionKeys.filter(key =>
-    hashIndexRegex.test(key)
-  ) as (keyof TFieldConditions & string)[];
+  // Prepare wildcard segments once, and only if an exact condition wasn't found.
+  let conditionKeysWithHashes: { key: string; parts: string[] }[] | undefined;
 
   return formFieldPaths.map((path): boolean => {
     if (path in conditions) {
       // Found condition matching this field exactly
       return conditions[path as keyof typeof conditions]!(getValues);
     }
-    if (conditionKeysWithHashes.length && integerIndexRegex.test(path)) {
+    if (integerIndexRegex.test(path)) {
+      conditionKeysWithHashes ??= conditionKeys
+        .filter(key => hashIndexRegex.test(key))
+        .map(key => ({ key, parts: key.split('.') }));
       const conditionKey = getConditionKeyWithHashThatMatchesPath(
         path,
         conditionKeysWithHashes

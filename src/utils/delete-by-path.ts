@@ -4,53 +4,50 @@ export function deleteByPathWithoutMutation(
   object: Record<string, unknown>,
   path: string
 ): Record<string, unknown> {
-  // Recurse into object until we're at the right level
-  const keysToRecurse = path.split('.');
-  const lastKey = keysToRecurse.pop();
-  if (!lastKey) return object;
+  return deleteByPathsWithoutMutation(object, [path]);
+}
 
-  // Top-level deletion
-  if (!keysToRecurse.length) {
-    const clone = { ...object };
-    delete clone[lastKey];
-    return clone;
-  }
+export function deleteByPathsWithoutMutation(
+  object: Record<string, unknown>,
+  paths: readonly string[]
+): Record<string, unknown> {
+  let result = object;
+  // Reuse copies only within this batch, never mutate objects from the input.
+  const copies = new WeakSet<object>();
 
-  // Recurse to right level to find object to mutate
-  let objectToDeleteFrom = object;
-  for (const key of keysToRecurse) {
-    // @ts-expect-error TS doesn't like the unknown type
-    objectToDeleteFrom = objectToDeleteFrom[key];
+  paths: for (const path of paths) {
+    const keys = path.split('.');
+    const lastKey = keys.pop();
+    if (!lastKey) continue;
 
-    // If no longer an object, bail!
-    if (!objectToDeleteFrom || typeof objectToDeleteFrom !== 'object') {
-      return object;
+    let parent = result;
+    for (const key of keys) {
+      const child = parent[key];
+      if (!isObject(child)) continue paths;
+      parent = child;
     }
-  }
 
-  // Clone & delete key
-  const objectWithDeletedKey = { ...objectToDeleteFrom };
-  delete objectWithDeletedKey[lastKey];
-
-  // Recurse down again, now that we have new object, updating references
-  // along the way
-  const newParentObject = { ...object };
-  let objectToUpdate: object = newParentObject;
-  keysToRecurse.forEach((key, index) => {
-    if (index < keysToRecurse.length - 1) {
-      // @ts-expect-error Clone object at this level
-      objectToUpdate[key] = Array.isArray(objectToUpdate[key])
-        ? // @ts-expect-error Clone array
-          [...objectToUpdate[key]]
-        : // @ts-expect-error Clone object
-          { ...objectToUpdate[key] };
-      // @ts-expect-error Now recurse down to the next level
-      objectToUpdate = objectToUpdate[key];
-    } else {
-      // @ts-expect-error At the very bottom, swap out object
-      objectToUpdate[key] = objectWithDeletedKey;
+    if (result === object) {
+      result = { ...object };
+      copies.add(result);
     }
-  });
+    parent = result;
+    for (const key of keys) {
+      const child = parent[key];
+      if (!isObject(child)) continue paths;
+      if (!copies.has(child)) {
+        const copy = Array.isArray(child) ? [...child] : { ...child };
+        parent[key] = copy;
+        copies.add(copy);
+      }
+      parent = parent[key] as Record<string, unknown>;
+    }
 
-  return newParentObject;
+    delete parent[lastKey];
+  }
+  return result;
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object';
 }

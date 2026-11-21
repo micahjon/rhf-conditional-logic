@@ -357,7 +357,8 @@ function nestedPathValues(
   getValues: GetValues<{
     settings?: { enabled: boolean };
     groups: ({ details?: { count: number } } | undefined)[];
-  }>
+  }>,
+  path: 'settings.enabled' | 'groups.#.details.count'
 ) {
   type Input = {
     settings?: { enabled: boolean };
@@ -377,6 +378,15 @@ function nestedPathValues(
   >;
   const [tupleGroup] = getValues(['groups.#', 'settings.enabled']);
   type _wholeRowTupleLookup = Expect<Equal<typeof tupleGroup, typeof group>>;
+  const value = getValues(path);
+  type _unionLookup = Expect<
+    Equal<
+      typeof value,
+      FieldPathValue<Input, 'settings.enabled' | `groups.${number}.details.count`>
+    >
+  >;
+  const values = getValues([path, 'groups.#']);
+  type _unionTupleLookup = Expect<Equal<typeof values, [typeof value, typeof group]>>;
   type _nestedWildcard = Expect<
     Equal<
       FieldConditionPath<{ 'groups.#.entries.#.detail': () => boolean }>,

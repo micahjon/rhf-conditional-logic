@@ -161,6 +161,26 @@ test('still evaluates visibility for an absent target', () => {
   expect(condition).toHaveBeenCalledOnce();
 });
 
+test('keeps exact precedence and first wildcard match across evaluations', () => {
+  const values = { rows: [{ notes: [{ detail: 'value' }] }] };
+  const getValues = ((path: string) => get(values, path)) as UseFormGetValues<
+    typeof values
+  >;
+  const wildcards = {
+    'rows.#.notes.#.detail': (): boolean => false,
+    'rows.0.notes.#.detail': () => true,
+  } satisfies FieldConditions<typeof values>;
+  const conditions = {
+    ...wildcards,
+    'rows.0.notes.0.detail': () => true,
+  } satisfies FieldConditions<typeof values>;
+  const paths = ['rows.0.notes.0.detail'] as const;
+  expect(gcl(paths, conditions, getValues)).toStrictEqual([true]);
+  expect(gcl(paths, wildcards, getValues)).toStrictEqual([false]);
+  wildcards['rows.#.notes.#.detail'] = () => true;
+  expect(gcl(paths, wildcards, getValues)).toStrictEqual([true]);
+});
+
 describe('mocking console.warn...', () => {
   const consoleWarnMock = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   afterAll(() => {

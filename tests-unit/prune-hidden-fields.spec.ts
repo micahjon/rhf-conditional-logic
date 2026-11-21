@@ -238,40 +238,6 @@ describe.each(['values', 'getValues'] as const)(
       expect(condition).toHaveBeenCalledTimes(4);
     });
 
-    test('rejects bracket targets rather than deleting from a literal-key collision', () => {
-      const values = {
-        groups: [{ entries: [{ note: 'nested' }] }],
-        'groups[0]': { entries: [{ note: 'literal' }] },
-      };
-      const snapshot = cloneDeep(values);
-      const condition = vi.fn(() => false);
-      expect(() => prune(values, { 'groups[0].entries.#.note': condition })).toThrow(
-        'Condition targets must use dot-separated paths'
-      );
-      expect(condition).not.toHaveBeenCalled();
-      expect(values).toStrictEqual(snapshot);
-    });
-
-    test.each(['direct', 'wildcard'] as const)(
-      'rejects literal dotted-key %s targets without mutation',
-      mode => {
-        const values = {
-          'groups.members': [{ note: 'literal' }],
-          'direct.note': 'literal',
-        };
-        const condition = vi.fn(() => false);
-        const target = mode === 'direct' ? 'direct.note' : 'groups.members.#.note';
-        expect(() => prune(values, { [target]: condition })).toThrow(
-          'Condition targets cannot use literal dotted keys'
-        );
-        expect(condition).not.toHaveBeenCalled();
-        expect(values).toStrictEqual({
-          'groups.members': [{ note: 'literal' }],
-          'direct.note': 'literal',
-        });
-      }
-    );
-
     test('evaluates every condition against the unpruned values', () => {
       type Values = { first?: string; second?: string };
       const values: Values = { first: 'present', second: 'keep' };

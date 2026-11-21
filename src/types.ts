@@ -11,8 +11,8 @@ import {
 /**
  * OVERVIEW
  *
- * The vast majority of the types used in this project are from
- * React Hook Form verbatum. However, we make a few modifications
+ * The path types used in this project are based on
+ * React Hook Form. However, we make a few modifications
  * & additions:
  *
  * - Define FieldConditions, the type for the object where the library
@@ -28,15 +28,18 @@ import {
  *   in a path. The hash acts like a wildcard index, matching the
  *   "current" index of the array item being looked up.
  *
- * - All modified React Hook Form types & their derivates are suffixed
+ * - Distinguish readable paths from condition targets: whole array items
+ *   can be dependencies, but only fields within them can be targets.
+ *
+ * - All modified React Hook Form types & their derivatives are suffixed
  *   with "CL" to distinguish them from the originals
  *
  */
 
 /**
- * Map of field names to field conditions (functions that accept a getValues()
- * function and return a boolean). Array items can be read by conditions but
- * cannot be condition targets.
+ * ADDITION: Map of field names to field conditions (functions that accept
+ * getValues() and return a boolean). Array items can be read by conditions
+ * but cannot be condition targets.
  */
 export type FieldConditions<TFieldValues extends FieldValues> = Partial<
   Record<PathCL<TFieldValues, true>, (getValue: GetValues<TFieldValues>) => boolean>
@@ -59,12 +62,11 @@ type ReplaceHashesWithNumbers<T extends string> =
     : T;
 
 /**
- * GetValues is derived from UseFormGetValues
+ * MODIFICATION: GetValues is derived from UseFormGetValues
  *
- * GetValues has an identical type signature except it does not accept the
- * no-parameters option. You must always pass it something b/c it
- * keeps track of what is passed as conditional logic dependencies, so we
- * can watch these fields to re-evaluate conditional logic
+ * Keep RHF's named-field and field-array overloads, but require field names
+ * so we can track dependencies and watch those fields to re-evaluate conditions.
+ * Unlike RHF's getter, its paths also accept "#" wildcard indices.
  */
 export type GetValues<TFieldValues extends FieldValues> = {
   /**
@@ -100,6 +102,8 @@ export type GetValues<TFieldValues extends FieldValues> = {
  */
 export type FieldPathPlusHash<TFieldValues extends FieldValues> = PathCL<TFieldValues>;
 
+// ADDITION: RHF allows whole-item paths. Exclude those leaves only when
+// generating condition targets; numeric object properties remain valid targets.
 type PathLeafCL<
   K extends string | number,
   TConditionTarget extends boolean,
@@ -146,7 +150,8 @@ type PathImplCL<
   ?
       | PathLeafCL<K, TConditionTarget, TArrayItem>
       | `${K}.${PathInternalCL<V, TraversedTypes | V, TConditionTarget>}`
-      // Whole rows remain readable, but cannot be condition targets.
+      // MODIFICATION: RHF only generates numeric indices. Add "#" branches
+      // for the current array index, retaining whole-row reads but not targets.
       | (TConditionTarget extends true ? never : '#')
       | `#.${PathInternalCL<V, TraversedTypes | V, TConditionTarget>}`
   :
@@ -163,21 +168,23 @@ type PathImplCL<
  * PathValue<[number, string], '1'> = string
  * ```
  *
- * Resolve wildcard indices before delegating to RHF so optional ancestors and
- * other path-value semantics stay aligned with the installed RHF version.
+ * MODIFICATION: RHF's PathValue does not understand "#". Normalize all wildcard
+ * indices (including a terminal "parent.#") before delegating to RHF so optional
+ * ancestors and other path-value semantics follow the installed RHF version.
+ * Select matching native paths instead of intersecting path unions, which
+ * multiplies type-checking work on large forms with many getter calls.
  */
 export type PathValueCL<T, P extends PathCL<T> | ArrayPath<T>> = PathValue<
   T,
-  ReplaceHashesWithNumbers<P> & Path<T>
+  Extract<ReplaceHashesWithNumbers<P>, Path<T>>
 >;
 
 //
 //
-// -------------------------- Nothing more to see here -----------------------------
+// -------------------------- RHF-derived helpers ----------------------------------
 //
-// Everything past this point was copied verbatum from React Hook Forms and is only
-// included b/c it is not exported from React Hook Forms and is needed to get the
-// above types to work correctly.
+// These helpers come from React Hook Form's path types. The CL variants below
+// have the noted modifications; the other helpers retain RHF's behavior.
 //
 // ----------------------------------------------------------------------------------
 //
@@ -251,6 +258,9 @@ type AnyIsEqual<T1, T2> = T1 extends T2
  * Helper type for recursively constructing paths through a type.
  * This obscures the internal type param TraversedTypes from exported contract.
  *
+ * MODIFICATION: Carry the condition-target mode through recursion and identify
+ * array/tuple items separately from object properties when constructing leaves.
+ *
  * See {@link PathCL}
  */
 type PathInternalCL<
@@ -286,6 +296,9 @@ type PathInternalCL<
  * ```
  * Path<{foo: {bar: string}}> = 'foo' | 'foo.bar'
  * ```
+ *
+ * MODIFICATION: TConditionTarget selects target paths without bare array items.
+ * The default retains all readable paths, including "#" wildcard indices.
  */
 // We want to explode the union type and process each individually
 // so assignable types don't leak onto the stack from the base.
