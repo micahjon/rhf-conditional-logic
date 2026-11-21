@@ -15,7 +15,7 @@ export function getConditionKeyWithHashThatMatchesPath<
   }[]
 ) {
   const pathParts = pathWithIndices.split('.');
-  // If path has a numberic index, attempt to find a condition with a
+  // If path has a numeric index, attempt to find a condition with a
   // wildcard "#" hash index
   // This is used to allow a single condition to match multiple indices
   // e.g. the same condition for every object in the array

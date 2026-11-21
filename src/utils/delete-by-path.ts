@@ -1,4 +1,4 @@
-// Delete from a field path from an object, e.g. "a.b"
+// Delete a field from an object by its path, e.g. "a.b"
 // without mutating said object
 export function deleteByPathWithoutMutation(
   object: Record<string, unknown>,

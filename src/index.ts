@@ -134,7 +134,7 @@ export function pruneHiddenFields<
         // Paths to transform after this iteration
         const nextPathsToTransform: string[] = [];
 
-        // Swap out this hash index in ever path
+        // Swap out this hash index in every path
         for (const path of pathsToTransform) {
           const partsBeforeHash = path.split('.').slice(0, hashIndex);
           const partsAfterHash = path.split('.').slice(hashIndex + 1);
@@ -160,12 +160,7 @@ export function pruneHiddenFields<
     fieldPath => getValueAtPath(fieldPath) !== undefined
   );
 
-  const conditionResults = evaluateConditionalLogic(
-    fieldPaths,
-    conditions,
-    getValues,
-    fieldPathsWithHashes
-  );
+  const conditionResults = evaluateConditionalLogic(fieldPaths, conditions, getValues);
 
   const hiddenPaths = fieldPaths.filter(
     (_, index) => conditionResults[index] === false

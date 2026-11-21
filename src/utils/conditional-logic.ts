@@ -55,10 +55,9 @@ export function getConditionalLogicWithDependencies<
   conditions: TFieldConditions,
   getValues: UseFormGetValues<TFieldValues>
 ) {
-  const conditionKeys = objectKeys(conditions);
-  assertValidConditionTargets(formFieldPaths, conditionKeys, getValues);
+  assertValidConditionTargets(formFieldPaths, objectKeys(conditions), getValues);
   // Whenever a user looks up a value in a conditional logic function, we track
-  // its field name as a depedency of the conditional field
+  // its field name as a dependency of the conditional field
   const dependencies: Set<FieldPath<TFieldValues>> = new Set();
   function getDependencyValue<TFieldName extends FieldPath<TFieldValues>>(
     field: TFieldName
@@ -84,12 +83,11 @@ export function getConditionalLogicWithDependencies<
 
   // For each field the user requested, determine whether it should be visible (and
   // included in form data) or not. As we evaluate these conditions, we track
-  // depedencies
+  // dependencies
   const formFieldVisibility = evaluateConditionalLogic(
     formFieldPaths,
     conditions,
-    getDependencyValue,
-    conditionKeys
+    getDependencyValue
   );
 
   return { formFieldVisibility, dependencies };
@@ -107,15 +105,10 @@ export function getConditionalLogic<
   conditions: TFieldConditions,
   getValues: GetValues<TFieldValues>
 ) {
-  const conditionKeys = objectKeys(conditions);
-  assertValidConditionTargets(formFieldPaths, conditionKeys, getValues);
-  return evaluateConditionalLogic<
-    TFieldValues,
-    TFieldNames,
-    TFieldNamesParam,
-    TFieldConditions,
-    TConditionPath
-  >(formFieldPaths, conditions, getValues, conditionKeys);
+  assertValidConditionTargets(formFieldPaths, objectKeys(conditions), getValues);
+  return evaluateConditionalLogic(formFieldPaths, conditions, getValues) as {
+    [Index in keyof TFieldNamesParam]: boolean;
+  };
 }
 
 /**
@@ -126,16 +119,12 @@ export function getConditionalLogic<
  */
 export function evaluateConditionalLogic<
   TFieldValues extends FieldValues,
-  TFieldNames extends FieldPath<TFieldValues>[],
-  TFieldNamesParam extends readonly [...TFieldNames],
   TFieldConditions extends FieldConditions<TFieldValues>,
-  TConditionPath extends FieldConditionPath<TFieldConditions>,
 >(
-  formFieldPaths: readonly [...TConditionPath[]],
+  formFieldPaths: readonly string[],
   conditions: TFieldConditions,
-  getValues: GetValues<TFieldValues>,
-  conditionKeys: readonly string[]
-) {
+  getValues: GetValues<TFieldValues>
+): readonly boolean[] {
   // Prepare wildcard segments once, and only if an exact condition wasn't found.
   let conditionKeysWithHashes: { key: string; parts: string[] }[] | undefined;
 
@@ -145,7 +134,7 @@ export function evaluateConditionalLogic<
       return conditions[path as keyof typeof conditions]!(getValues);
     }
     if (integerIndexRegex.test(path)) {
-      conditionKeysWithHashes ??= conditionKeys
+      conditionKeysWithHashes ??= objectKeys(conditions)
         .filter(key => hashIndexRegex.test(key))
         .map(key => ({ key, parts: key.split('.') }));
       const conditionKey = getConditionKeyWithHashThatMatchesPath(
@@ -177,5 +166,5 @@ export function evaluateConditionalLogic<
     // but show the developer a warning. They should already have a type error.
     console.warn(`Missing RHF conditional logic for "${path}"`);
     return true;
-  }) as { [Index in keyof TFieldNamesParam]: boolean };
+  });
 }

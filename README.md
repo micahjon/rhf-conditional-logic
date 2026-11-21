@@ -83,7 +83,7 @@ export const conditions = {
   // Show "Other Caterer" if "Other" option is selected
   otherCaterer: getValues => getValues('caterer') === 'Other',
   // Show "Wine" options for guests over 21
-  // Note: "#" wildcard stands-in for "current" array index
+  // Note: "#" wildcard stands in for "current" array index
   ['guests.#.wine']: getValues => getValues('guests.#.age') >= 21,
 } satisfies FieldConditions<FormSchema>;
 
