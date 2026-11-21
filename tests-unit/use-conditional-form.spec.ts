@@ -8,6 +8,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
 import {
   FieldConditions,
+  GetValues,
   pruneHiddenFields,
   useCondition,
   useConditionalForm,
@@ -191,6 +192,44 @@ describe('useConditionalForm()', () => {
     );
     expect(result.current.nativeIsValid).toBe(false);
     expect(result.current.conditionalIsValid).toBe(false);
+  });
+
+  test('skips an absent target before registration without suppressing validation', async () => {
+    const schema = z.object({
+      count: z.string().min(1),
+      note: z.string().optional(),
+    });
+    const condition = vi.fn(
+      (getValues: GetValues<z.input<typeof schema>>) => getValues('count').length > 0
+    );
+    const resolver = vi.fn(zodResolver(schema));
+    const result = renderHook(() => {
+      const form = useConditionalForm<z.input<typeof schema>>({
+        conditions: { note: condition },
+        resolver,
+        defaultValues: { count: 'valid', note: 'saved' },
+        shouldUnregister: true,
+      });
+      return { form, isValid: form.formState.isValid };
+    });
+    await act(async () => {});
+    expect(condition).not.toHaveBeenCalled();
+    expect(resolver.mock.lastCall?.[0]).toStrictEqual({});
+    expect(result.current.isValid).toBe(false);
+
+    act(() => {
+      result.current.form.register('count');
+      result.current.form.register('note');
+      result.current.form.setValue('count', '');
+      result.current.form.setValue('note', 'saved');
+    });
+    const onInvalid = vi.fn();
+    await act(async () => {
+      await result.current.form.handleSubmit(vi.fn(), onInvalid)();
+    });
+    expect(condition).toHaveBeenCalled();
+    expect(resolver.mock.lastCall?.[0]).toStrictEqual({ count: '' });
+    expect(onInvalid.mock.calls[0][0]).toHaveProperty('count');
   });
 
   test('matches RHF validity after resetting while keeping default values', async () => {

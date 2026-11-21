@@ -18,6 +18,7 @@ import {
   FieldPathValuesCL,
 } from './types';
 import {
+  assertValidConditionTargets,
   getConditionalLogic,
   getConditionalLogicWithDependencies,
 } from './utils/conditional-logic';
@@ -96,6 +97,26 @@ export function pruneHiddenFields<
   }
   const getValueAtPath = (path: string) => get(initialValues, path);
 
+  // Pruning targets are nested dot paths, unlike RHF's permissive dependency reads.
+  function getTargetValue(path: string) {
+    const parts = path.split('.');
+    let value: unknown = initialValues;
+    for (let index = 0; index < parts.length; index++) {
+      if (value === null || typeof value !== 'object') return undefined;
+      const remainder = parts.slice(index).join('.');
+      if (
+        index < parts.length - 1 &&
+        Object.prototype.hasOwnProperty.call(value, remainder)
+      ) {
+        throw new Error(
+          `Condition targets cannot use literal dotted keys ("${path}"). Use nested objects with dot-separated paths.`
+        );
+      }
+      value = Reflect.get(value, parts[index]);
+    }
+    return value;
+  }
+
   function getSnapshotValues<TFieldName extends FieldPathCL<TFieldValues>>(
     name: TFieldName
   ): FieldPathValueCL<TFieldValues, TFieldName>;
@@ -115,7 +136,7 @@ export function pruneHiddenFields<
   const fieldPathsWithHashes = objectKeys(conditions);
   let values = initialValues;
 
-  const fieldPaths = fieldPathsWithHashes
+  const expandedFieldPaths = fieldPathsWithHashes
     .map(fieldPath => {
       const pathParts = fieldPath.split('.');
       if (!pathParts.includes('#')) return fieldPath;
@@ -137,7 +158,7 @@ export function pruneHiddenFields<
         for (const path of pathsToTransform) {
           const partsBeforeHash = path.split('.').slice(0, hashIndex);
           const partsAfterHash = path.split('.').slice(hashIndex + 1);
-          const expectedArray = getValueAtPath(partsBeforeHash.join('.'));
+          const expectedArray = getTargetValue(partsBeforeHash.join('.'));
           if (Array.isArray(expectedArray)) {
             expectedArray.forEach((_, index) => {
               nextPathsToTransform.push(
@@ -151,6 +172,13 @@ export function pruneHiddenFields<
       return pathsToTransform;
     })
     .flat() as unknown[] as FieldConditionPath<TFieldConditions>[];
+
+  assertValidConditionTargets(expandedFieldPaths, conditions, getValues);
+  // Unregistered/absent targets have nothing to prune; their dependencies may
+  // also be absent before mount. UI visibility still evaluates every requested rule.
+  const fieldPaths = expandedFieldPaths.filter(
+    fieldPath => getTargetValue(fieldPath) !== undefined
+  );
 
   const conditionResults = getConditionalLogic(fieldPaths, conditions, getValues);
 

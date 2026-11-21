@@ -146,6 +146,21 @@ test('rejects numeric array-item targets without evaluating their conditions', (
   expect(condition).not.toHaveBeenCalled();
 });
 
+test('still evaluates visibility for an absent target', () => {
+  const values: { count: string; note?: string } = { count: 'shown' };
+  const getValues = ((path: string) => get(values, path)) as UseFormGetValues<
+    typeof values
+  >;
+  const condition = vi.fn(() => true);
+  const result = getConditionalLogicWithDependencies(
+    ['note'],
+    { note: condition },
+    getValues
+  );
+  expect(result.formFieldVisibility).toStrictEqual([true]);
+  expect(condition).toHaveBeenCalledOnce();
+});
+
 describe('mocking console.warn...', () => {
   const consoleWarnMock = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   afterAll(() => {

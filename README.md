@@ -117,6 +117,8 @@ With RHF's default `shouldUnregister: false`, hidden inputs retain their editing
 
 ## Array fields
 
+Condition targets use dot-separated paths into nested values (`groups.0.note`), not bracket notation or literal property names containing dots. Dependency reads still follow RHF's getter semantics.
+
 Use `#` in conditions to mean "the current array index". For example, `guests.#.wine` reads `guests.#.age` from the same guest. Multiple `#` segments support nested arrays.
 
 Conditions can target fields within a row, but not an entire array item (`guests.#` or `guests.0`). Use `useFieldArray().remove(index)` to remove rows. Within a field condition, `getValues('guests.#')` can still read the current guest.
@@ -224,6 +226,8 @@ const pruned = pruneHiddenFields(draft, conditions);
 ```
 
 You can also pass RHF's getter: `pruneHiddenFields(getValues, conditions)`. Both forms infer their types from the input, support the same conditions and wildcard paths, and leave the original values unchanged. Conditions always read the original values, before any fields are removed.
+
+Pruning skips targets that are absent or `undefined`, since there is nothing to remove. This lets the resolver validate incomplete snapshots before registration. `useCondition()` still evaluates its requested visibility rules normally.
 
 Pruning does not validate values or change their type. Resolver defaults/transforms can add fields back after pruning; avoid defaults on hidden fields unless that submitted value is intentional.
 

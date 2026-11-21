@@ -17,6 +17,8 @@ Compatibility with modern React Hook Form and both Zod 3 and 4 ([micahjon/rhf-co
 - `pruneHiddenFields(values, conditions)` now accepts a plain values object as an alternative to RHF's `getValues`, with inferred input/condition types and unchanged nonmutating pruning behavior. Existing getter calls remain supported.
 - Invalid getter conditions cannot fall through to the values overload. Plain-values dependency lookups match RHF's fallback to literal dotted keys when nested values are undefined.
 - Pruning uses RHF's exported `get` helper so its dependency lookups stay aligned with UI visibility.
+- Condition targets require nested dot-separated paths; unsupported bracket notation and literal dotted-key targets are rejected rather than silently leaving hidden values behind.
+- Skip absent/undefined targets during pruning so unregistered resolver snapshots can be validated without evaluating rules against missing dependencies. UI visibility evaluation and invalid array-target guards remain unchanged.
 - The resolver wrapper prunes the values provided by RHF rather than reading `getValues()`, keeping pre-mount and reset validation aligned with RHF.
 - Zod raw mode returns pruned input; otherwise the resolver's parsed output is preserved, including defaults/transforms that may add fields back after pruning.
 - Add compile-time API regressions, hook integration tests, and standalone pruning tests. CI covers RHF 7.55/7.92 with Zod 3/4; resolver output, raw mode, custom sync/async resolvers, context, nested wildcards, and incomplete drafts are covered.

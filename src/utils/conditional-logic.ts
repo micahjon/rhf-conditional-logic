@@ -18,6 +18,43 @@ import {
   swapOutHashesInFieldPath,
 } from './field-name-paths';
 
+export function assertValidConditionTargets<TFieldValues extends FieldValues>(
+  formFieldPaths: readonly string[],
+  conditions: FieldConditions<TFieldValues>,
+  getUntrackedValues: GetValues<TFieldValues>
+) {
+  const conditionKeys = objectKeys(conditions);
+  const bracketTarget = conditionKeys.find(
+    key => key.includes('[') || key.includes(']')
+  );
+  if (bracketTarget) {
+    throw new Error(
+      `Condition targets must use dot-separated paths, not bracket notation ("${bracketTarget}").`
+    );
+  }
+
+  // Numeric keys can also be object properties, so inspect the parent.
+  const arrayItemTarget =
+    conditionKeys.find(key => key.endsWith('.#')) ??
+    formFieldPaths.find(path => {
+      const separator = path.lastIndexOf('.');
+      return (
+        separator >= 0 &&
+        integerRegex.test(path.slice(separator + 1)) &&
+        Array.isArray(
+          getUntrackedValues(
+            path.slice(0, separator) as FieldPathPlusHash<TFieldValues>
+          )
+        )
+      );
+    });
+  if (arrayItemTarget) {
+    throw new Error(
+      `Conditions cannot target entire array items ("${arrayItemTarget}"). Target a field within the item or remove the row with useFieldArray().`
+    );
+  }
+}
+
 // Utility to compute conditional logic for one or more fields and track dependencies
 export function getConditionalLogicWithDependencies<
   TFieldValues extends FieldValues,
@@ -105,28 +142,8 @@ function evaluateConditionalLogic<
   getValues: GetValues<TFieldValues>,
   getUntrackedValues: GetValues<TFieldValues>
 ) {
+  assertValidConditionTargets(formFieldPaths, conditions, getUntrackedValues);
   const conditionKeys = objectKeys(conditions);
-  // Reject whole-row targets before running conditions. Numeric keys can also be
-  // object properties, so inspect the parent instead of rejecting every numeric key.
-  const arrayItemTarget =
-    conditionKeys.find(key => key.endsWith('.#')) ??
-    formFieldPaths.find(path => {
-      const separator = path.lastIndexOf('.');
-      return (
-        separator >= 0 &&
-        integerRegex.test(path.slice(separator + 1)) &&
-        Array.isArray(
-          getUntrackedValues(
-            path.slice(0, separator) as FieldPathPlusHash<TFieldValues>
-          )
-        )
-      );
-    });
-  if (arrayItemTarget) {
-    throw new Error(
-      `Conditions cannot target entire array items ("${arrayItemTarget}"). Target a field within the item or remove the row with useFieldArray().`
-    );
-  }
 
   // All condition keys that are generic (have # to match any index)
   const conditionKeysWithHashes = conditionKeys.filter(key =>
