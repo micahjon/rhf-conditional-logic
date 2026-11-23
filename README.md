@@ -54,7 +54,7 @@ A tiny library that makes it easy to define conditional logic in one place, expo
 npm i rhf-conditional-logic
 ```
 
-Requires React Hook Form `^7.55.0`. The examples use Zod `3.25.76` or `4` with `@hookform/resolvers` `5.2.2+`, installed separately. For Zod 4, use TypeScript `5.5+` with `strict` enabled.
+The examples use Zod and `@hookform/resolvers`, installed separately. See [Compatibility](#compatibility) for release-specific guidance.
 
 Totally up to you, but I find it cleaner to stick schemas in one file and components in another, e.g.
 
@@ -120,7 +120,6 @@ export function Form() {
 
   const onSubmit = (validVisibleFields: FormSchema) => {
     // Do something with pruned & validated form submission!
-    console.log(validVisibleFields);
   };
 
   return (
@@ -196,8 +195,6 @@ export function useCatererForm() {
 
 Use `FieldConditions<Input>` for conditions. The pipe above is for simple enums; do not apply a transforming schema twice.
 
-With resolver `raw: true`, validation still runs but submission receives pruned input, not parsed output. Leave output equal to input in that mode.
-
 ### Generics and form context
 
 You don't need explicit generics when the resolver and defaults provide enough type information, as above. Annotating `defaultValues: Input` avoids inferring a nullable field as only `null`; `satisfies Input` checks the value but does not widen it.
@@ -236,7 +233,20 @@ const pruned = pruneHiddenFields(draft, conditions);
 // draft is unchanged
 ```
 
-`pruneHiddenFields(getValues, conditions)` remains supported. Both forms evaluate against the original values without validation or mutation, skipping absent/undefined targets. The root must be an object with named array fields, not an array itself.
+`pruneHiddenFields(getValues, conditions)` remains supported. Both forms evaluate against the original values without validation or mutation, skipping absent/undefined targets.
+
+## Compatibility
+
+Each library release declares its supported React Hook Form range in `peerDependencies`, which npm normally checks during installation.
+
+| Library version | React Hook Form peer range |
+| --- | --- |
+| `0.1.2` (current npm release) | `^7.0.0` |
+| `0.2.0` (unreleased) | `^7.55.0` |
+
+The distinct input/output typing and plain-values pruning examples above describe the unreleased `0.2.0` changes, not the current npm release.
+
+Zod and `@hookform/resolvers` are optional, separately installed packages, so this library's peer dependencies do not constrain their versions. The unreleased examples use Zod `3.25.76` or `4` with `@hookform/resolvers` `5.2.2+`. For Zod 4, use TypeScript `5.5+` with `strict` enabled.
 
 ## Future improvements
 
