@@ -167,7 +167,7 @@ _Curious about the backstory of this library? Check out my article on [Type-Safe
 
 ## Input and output types
 
-Your form may need to hold values that aren't valid for submission yet. For example, a caterer can start at `null` but must be selected before submitting. `BlankForm` describes the editing values; `ValidForm` describes the validated submission.
+Your form may need to hold values that aren't valid for submission yet. For example, a caterer can start at `null` but must be selected before submitting. `BlankForm` describes the values before validation; `ValidForm` describes the validated submission.
 
 ```ts
 // nullable-form.ts
@@ -192,15 +192,15 @@ export function useCatererForm() {
 }
 ```
 
-The `.pipe(selection)` step rejects `null` on submission. Use `FieldConditions<BlankForm>` for conditions, since they read the editing values.
+The `.pipe(selection)` step rejects `null` on submission. Use `FieldConditions<BlankForm>` for conditions, since they read the current form values.
 
 ### Generics and form context
 
-With typed defaults and a resolver, `useConditionalForm()` can usually infer both types, as above. Give defaults their full editing type so TypeScript knows `caterer` can hold more than `null`.
+With typed defaults and a resolver, `useConditionalForm()` can usually infer both types, as above. Give defaults the `BlankForm` type so TypeScript knows `caterer` can hold more than `null`.
 
 If you need explicit types, use `useConditionalForm<BlankForm, unknown, ValidForm>(...)`. Replace `unknown` with your resolver-context type if you use one. Passing only `<BlankForm>` makes the submission type `BlankForm` too.
 
-`useFormContext()` cannot infer types from its parent `FormProvider`. If editing and submission types differ, use `useFormContext<BlankForm, unknown, ValidForm>()`, or define a reusable hook from your form hook's return type:
+`useFormContext()` cannot infer types from its parent `FormProvider`. If the form values and submitted data have different types, use `useFormContext<BlankForm, unknown, ValidForm>()`, or define a reusable hook from your form hook's return type:
 
 ```ts
 // caterer-form-context.ts
@@ -211,7 +211,7 @@ export const useCatererFormContext: () => ReturnType<typeof useCatererForm> =
   useFormContext;
 ```
 
-Nested components can then call `useCatererFormContext()` under the matching `FormProvider`, without generics. When editing and submission types are the same, `useFormContext<ValidForm>()` is enough, as in the getting-started example.
+Nested components can then call `useCatererFormContext()` under the matching `FormProvider`, without generics. When the form values and submitted data have the same type, `useFormContext<ValidForm>()` is enough, as in the getting-started example.
 
 ## Pruning values outside a form
 
@@ -243,7 +243,7 @@ Each library release lists its supported React Hook Form versions in `peerDepend
 | `0.1.2` (current npm release) | `^7.0.0` |
 | `0.2.0` (unreleased) | `^7.55.0` |
 
-The examples for different editing/submission types and `pruneHiddenFields(values, conditions)` require the upcoming `0.2.0` release.
+The examples with separate types for form values and submitted data, plus `pruneHiddenFields(values, conditions)`, require the upcoming `0.2.0` release.
 
 The `0.2.0` examples use Zod `3.25.76` or `4` with `@hookform/resolvers` `5.2.2+`, installed separately. Zod 4 requires TypeScript `5.5+` with `strict` enabled.
 

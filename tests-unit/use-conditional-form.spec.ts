@@ -254,7 +254,7 @@ describe('useConditionalForm()', () => {
     );
   });
 
-  test('prunes before validation, submits transformed output, and preserves editing values', async () => {
+  test('prunes before validation, submits transformed output, and preserves current form values', async () => {
     const result = renderHook(() => {
       const form = useConditionalForm<
         z.input<typeof schema>,
@@ -384,7 +384,7 @@ describe('useConditionalForm()', () => {
     });
   });
 
-  test('clearing selections preserves nullable editing values and blocks resubmission', async () => {
+  test('clearing selections preserves nullable form values and blocks resubmission', async () => {
     const result = renderHook(() =>
       useConditionalForm<
         z.input<typeof formSchema>,

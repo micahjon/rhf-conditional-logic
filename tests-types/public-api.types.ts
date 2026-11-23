@@ -147,7 +147,7 @@ function pruneKeepsInputType(getValues: UseFormGetValues<BlankFormSchema>) {
 function pruneValuesKeepsInputType(values: BlankFormSchema) {
   const result = pruneHiddenFields(values, conditions);
   type _resultIsInputShape = Expect<Equal<typeof result, BlankFormSchema>>;
-  // @ts-expect-error pruning does not validate nullable editing values
+  // @ts-expect-error pruning does not validate nullable form values
   expectType<FormSchema>(result);
 }
 
