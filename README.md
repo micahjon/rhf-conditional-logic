@@ -1,6 +1,6 @@
 # Conditional Logic for React Hook Forms
 
-A tiny library that makes it easy to define conditional logic in one place, expose it in components for conditional rendering, and prune hidden field values before validation & submission.
+A tiny library for defining which fields to show, using those rules in your components, and removing hidden values before validation and submission.
 
 [Features](#features)&emsp;[Getting Started](#getting-started)&emsp;[Changelog](https://github.com/micahjon/rhf-conditional-logic/blob/main/CHANGELOG.md)
 
@@ -29,12 +29,12 @@ A tiny library that makes it easy to define conditional logic in one place, expo
   });
   ```
 
-  This way you can track hidden field values with `shouldUnregister = false` but don't have to worry about them showing up in `errors` and preventing submission, or even worse, being submitted when the user didn't intend to submit them!
+  Hidden fields keep their editing values with RHF's default `shouldUnregister: false`, but don't block validation or get submitted.
 
 - Use `useCondition()` (similar to `useWatch()`) to check if one or more conditional fields should be visible.
 
   ```ts
-  const [showOtherOption] = useCondition(['otherCaterer'], conditions, getValues, control);
+  const [showOtherCaterer] = useCondition(['otherCaterer'], conditions, getValues, control);
   ```
 
 - **Fully typed** with TypeScript! Get autocompletion & validation based on your Zod schema (or whatever validator you're using).
@@ -54,7 +54,7 @@ A tiny library that makes it easy to define conditional logic in one place, expo
 npm i rhf-conditional-logic
 ```
 
-The examples use Zod and `@hookform/resolvers`, installed separately. See [Compatibility](#compatibility) for release-specific guidance.
+The examples use Zod and `@hookform/resolvers`, installed separately. See [Compatibility](#compatibility) for supported versions.
 
 Totally up to you, but I find it cleaner to stick schemas in one file and components in another, e.g.
 
@@ -77,7 +77,7 @@ export const formSchema = z.object({
 });
 export type FormSchema = z.infer<typeof formSchema>;
 
-// All conditional logic goes in a single declarative object
+// All conditional logic goes in one typed object
 // { path.to.field: (getValues) => boolean }
 export const conditions = {
   // Show "Other Caterer" if "Other" option is selected
@@ -110,8 +110,8 @@ export function Form() {
   });
   const { register, handleSubmit, getValues, control } = methods;
 
-  // "showCaterer" boolean will update based on "caterer" value
-  const [showCaterer] = useCondition(['otherCaterer'], conditions, getValues, control);
+  // Updates when the selected caterer changes
+  const [showOtherCaterer] = useCondition(['otherCaterer'], conditions, getValues, control);
 
   const { fields: guestFields, append: appendGuest } = useFieldArray({
     control,
@@ -126,7 +126,7 @@ export function Form() {
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSubmit)}>
         {/* ... other form fields go here */}
-        {showCaterer && <input {...register('otherCaterer')} />}
+        {showOtherCaterer && <input {...register('otherCaterer')} />}
         {guestFields.map((field, i) => (
           <Guest key={field.id} index={i} />
         ))}
@@ -140,8 +140,7 @@ export function Form() {
 function Guest({ index }: { index: number }) {
   const { register, getValues, control } = useFormContext<FormSchema>();
 
-  // "showWineField" boolean will update based on "age" value
-  // for this particular field array index
+  // Updates when this guest's age changes
   const [showWineField] = useCondition(
     [`guests.${index}.wine`],
     conditions,
@@ -158,9 +157,9 @@ function Guest({ index }: { index: number }) {
 }
 ```
 
-Conditions target nested dot-separated field paths, including fields within array rows. Nested `#` wildcards and whole-row dependency reads (e.g. `getValues('guests.#')`) are supported. To remove an entire row, use `useFieldArray().remove(index)`, not a condition on `guests.#` or `guests.0`.
+Use dot-separated paths for nested fields and `#` for array indices, including nested arrays. To remove a row, use `useFieldArray().remove(index)` rather than a condition on the whole row.
 
-Pruning does not clear editing values with RHF's default `shouldUnregister: false`. Resolver defaults/transforms still run and may add omitted values back; avoid defaults on hidden fields unless that submitted value is intentional.
+Hidden values are removed before schema validation. Defaults and transforms still run, so a schema default can add a hidden field back to the submitted data.
 
 See the [working demo](tests-e2e/mock-form) for a complete form with nullable selections, field errors, and adding/removing guests.
 
@@ -168,7 +167,7 @@ _Curious about the backstory of this library? Check out my article on [Type-Safe
 
 ## Input and output types
 
-Like RHF, `useConditionalForm()` distinguishes editing **Input** from parsed **Output**. Defaults, conditions and `getValues()` use input; successful submission callbacks receive output. These types can often be inferred from your resolver and typed defaults. For example, a selection can start at null while editing but be required on submission:
+Your form may need to hold values that aren't valid for submission yet. For example, a caterer can start at `null` but must be selected before submitting. `BlankFormSchema` describes the editing values; `FormSchema` describes the validated submission.
 
 ```ts
 // nullable-form.ts
@@ -180,9 +179,9 @@ const selection = z.enum(['Elephants Catering', 'Delta BBQ', 'Other'], {
   message: 'Please select a caterer',
 });
 const schema = z.object({ caterer: selection.nullable().pipe(selection) });
-type Input = z.input<typeof schema>; // caterer can be null
-type Output = z.output<typeof schema>; // caterer cannot be null
-const defaultValues: Input = { caterer: null };
+type BlankFormSchema = z.input<typeof schema>; // caterer can be null
+type FormSchema = z.output<typeof schema>; // caterer cannot be null
+const defaultValues: BlankFormSchema = { caterer: null };
 
 export function useCatererForm() {
   return useConditionalForm({
@@ -193,15 +192,15 @@ export function useCatererForm() {
 }
 ```
 
-Use `FieldConditions<Input>` for conditions. The pipe above is for simple enums; do not apply a transforming schema twice.
+The `.pipe(selection)` step rejects `null` on submission. Use `FieldConditions<BlankFormSchema>` for conditions, since they read the editing values.
 
 ### Generics and form context
 
-You don't need explicit generics when the resolver and defaults provide enough type information, as above. Annotating `defaultValues: Input` avoids inferring a nullable field as only `null`; `satisfies Input` checks the value but does not widen it.
+With typed defaults and a resolver, `useConditionalForm()` can usually infer both types, as above. Give defaults their full editing type so TypeScript knows `caterer` can hold more than `null`.
 
-When inference isn't sufficient, pass `useConditionalForm<Input, Context, Output>(...)`, using `unknown` if you don't use resolver context. Passing only `<Input>` defaults output to input rather than inferring it from the resolver.
+If you need explicit types, use `useConditionalForm<BlankFormSchema, unknown, FormSchema>(...)`. Replace `unknown` with your resolver-context type if you use one. Passing only `<BlankFormSchema>` makes the submission type `BlankFormSchema` too.
 
-`useFormContext()` cannot infer types from its parent `FormProvider`. If input and output differ, use `useFormContext<Input, Context, Output>()`, or define a form-specific hook that reuses the inferred form type:
+`useFormContext()` cannot infer types from its parent `FormProvider`. If editing and submission types differ, use `useFormContext<BlankFormSchema, unknown, FormSchema>()`, or define a reusable hook from your form hook's return type:
 
 ```ts
 // caterer-form-context.ts
@@ -212,7 +211,7 @@ export const useCatererFormContext: () => ReturnType<typeof useCatererForm> =
   useFormContext;
 ```
 
-Nested components can then call `useCatererFormContext()` without generics. They must still be under the matching `FormProvider`; the type annotation does not check the provider relationship. When input and output are the same, `useFormContext<FormSchema>()` is sufficient, as in the getting-started example.
+Nested components can then call `useCatererFormContext()` under the matching `FormProvider`, without generics. When editing and submission types are the same, `useFormContext<FormSchema>()` is enough, as in the getting-started example.
 
 ## Pruning values outside a form
 
@@ -233,20 +232,20 @@ const pruned = pruneHiddenFields(draft, conditions);
 // draft is unchanged
 ```
 
-`pruneHiddenFields(getValues, conditions)` remains supported. Both forms evaluate against the original values without validation or mutation, skipping absent/undefined targets.
+`pruneHiddenFields(getValues, conditions)` also works. Neither form changes the original values or runs schema validation.
 
 ## Compatibility
 
-Each library release declares its supported React Hook Form range in `peerDependencies`, which npm normally checks during installation.
+Each library release lists its supported React Hook Form versions in `peerDependencies`, which npm normally checks during installation.
 
-| Library version | React Hook Form peer range |
+| Library version | React Hook Form |
 | --- | --- |
 | `0.1.2` (current npm release) | `^7.0.0` |
 | `0.2.0` (unreleased) | `^7.55.0` |
 
-The distinct input/output typing and plain-values pruning examples above describe the unreleased `0.2.0` changes, not the current npm release.
+The examples for different editing/submission types and `pruneHiddenFields(values, conditions)` require the upcoming `0.2.0` release.
 
-Zod and `@hookform/resolvers` are optional, separately installed packages, so this library's peer dependencies do not constrain their versions. The unreleased examples use Zod `3.25.76` or `4` with `@hookform/resolvers` `5.2.2+`. For Zod 4, use TypeScript `5.5+` with `strict` enabled.
+The `0.2.0` examples use Zod `3.25.76` or `4` with `@hookform/resolvers` `5.2.2+`, installed separately. Zod 4 requires TypeScript `5.5+` with `strict` enabled.
 
 ## Future improvements
 
