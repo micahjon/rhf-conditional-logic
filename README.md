@@ -1,6 +1,6 @@
 # Conditional Logic for React Hook Forms
 
-A tiny library for defining which fields to show, using those rules in your components, and removing hidden values before validation and submission.
+A tiny library that makes it easy to define conditional logic in one place, expose it in components for conditional rendering, and prune hidden field values before validation & submission.
 
 [Features](#features)&emsp;[Getting Started](#getting-started)&emsp;[Changelog](https://github.com/micahjon/rhf-conditional-logic/blob/main/CHANGELOG.md)
 
@@ -16,20 +16,20 @@ A tiny library for defining which fields to show, using those rules in your comp
   const conditions = {
     // Show "Other Caterer" field if "Other" option is selected
     otherCaterer: getValues => getValues('caterer') === 'Other',
-  } satisfies FieldConditions<FormSchema>;
+  } satisfies FieldConditions<ValidForm>;
   ```
 
 - Use `useConditionalForm()` (a drop-in replacement for `useForm()`) to prune hidden field values before validation & submission:
 
   ```ts
-  const { register } = useConditionalForm<FormSchema>({
+  const { register } = useConditionalForm<ValidForm>({
     conditions,
     resolver: zodResolver(formSchema),
     defaultValues: {...},
   });
   ```
 
-  Hidden fields keep their editing values with RHF's default `shouldUnregister: false`, but don't block validation or get submitted.
+  This way you can track hidden field values with `shouldUnregister: false` but don't have to worry about them showing up in `errors` and preventing submission, or even worse, being submitted when the user didn't intend to submit them!
 
 - Use `useCondition()` (similar to `useWatch()`) to check if one or more conditional fields should be visible.
 
@@ -75,7 +75,7 @@ export const formSchema = z.object({
     })
   ),
 });
-export type FormSchema = z.infer<typeof formSchema>;
+export type ValidForm = z.infer<typeof formSchema>;
 
 // All conditional logic goes in one typed object
 // { path.to.field: (getValues) => boolean }
@@ -85,9 +85,9 @@ export const conditions = {
   // Show "Wine" options for guests over 21
   // Note: "#" wildcard stands in for "current" array index
   ['guests.#.wine']: getValues => getValues('guests.#.age') >= 21,
-} satisfies FieldConditions<FormSchema>;
+} satisfies FieldConditions<ValidForm>;
 
-export const defaultValues: FormSchema = {
+export const defaultValues: ValidForm = {
   caterer: 'Elephants Catering',
   guests: [{ age: 0 }],
 };
@@ -98,12 +98,12 @@ export const defaultValues: FormSchema = {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormProvider, useFieldArray, useFormContext } from 'react-hook-form';
 import { useConditionalForm, useCondition } from 'rhf-conditional-logic';
-import { FormSchema, conditions, defaultValues, formSchema } from './form-schema';
+import { ValidForm, conditions, defaultValues, formSchema } from './form-schema';
 
 export function Form() {
   // useConditionalForm() wraps useForm() and prunes hidden field values
   // before validation / submission
-  const methods = useConditionalForm<FormSchema>({
+  const methods = useConditionalForm<ValidForm>({
     conditions, // Your conditional logic definition goes here
     resolver: zodResolver(formSchema), // Required
     defaultValues, // Required
@@ -118,7 +118,7 @@ export function Form() {
     name: 'guests',
   });
 
-  const onSubmit = (validVisibleFields: FormSchema) => {
+  const onSubmit = (validVisibleFields: ValidForm) => {
     // Do something with pruned & validated form submission!
   };
 
@@ -138,7 +138,7 @@ export function Form() {
 }
 
 function Guest({ index }: { index: number }) {
-  const { register, getValues, control } = useFormContext<FormSchema>();
+  const { register, getValues, control } = useFormContext<ValidForm>();
 
   // Updates when this guest's age changes
   const [showWineField] = useCondition(
@@ -167,7 +167,7 @@ _Curious about the backstory of this library? Check out my article on [Type-Safe
 
 ## Input and output types
 
-Your form may need to hold values that aren't valid for submission yet. For example, a caterer can start at `null` but must be selected before submitting. `BlankFormSchema` describes the editing values; `FormSchema` describes the validated submission.
+Your form may need to hold values that aren't valid for submission yet. For example, a caterer can start at `null` but must be selected before submitting. `BlankForm` describes the editing values; `ValidForm` describes the validated submission.
 
 ```ts
 // nullable-form.ts
@@ -178,29 +178,29 @@ import { z } from 'zod';
 const selection = z.enum(['Elephants Catering', 'Delta BBQ', 'Other'], {
   message: 'Please select a caterer',
 });
-const schema = z.object({ caterer: selection.nullable().pipe(selection) });
-type BlankFormSchema = z.input<typeof schema>; // caterer can be null
-type FormSchema = z.output<typeof schema>; // caterer cannot be null
-const defaultValues: BlankFormSchema = { caterer: null };
+const formSchema = z.object({ caterer: selection.nullable().pipe(selection) });
+type BlankForm = z.input<typeof formSchema>; // caterer can be null
+type ValidForm = z.output<typeof formSchema>; // caterer cannot be null
+const defaultValues: BlankForm = { caterer: null };
 
 export function useCatererForm() {
   return useConditionalForm({
     conditions: {},
-    resolver: zodResolver(schema),
+    resolver: zodResolver(formSchema),
     defaultValues,
   });
 }
 ```
 
-The `.pipe(selection)` step rejects `null` on submission. Use `FieldConditions<BlankFormSchema>` for conditions, since they read the editing values.
+The `.pipe(selection)` step rejects `null` on submission. Use `FieldConditions<BlankForm>` for conditions, since they read the editing values.
 
 ### Generics and form context
 
 With typed defaults and a resolver, `useConditionalForm()` can usually infer both types, as above. Give defaults their full editing type so TypeScript knows `caterer` can hold more than `null`.
 
-If you need explicit types, use `useConditionalForm<BlankFormSchema, unknown, FormSchema>(...)`. Replace `unknown` with your resolver-context type if you use one. Passing only `<BlankFormSchema>` makes the submission type `BlankFormSchema` too.
+If you need explicit types, use `useConditionalForm<BlankForm, unknown, ValidForm>(...)`. Replace `unknown` with your resolver-context type if you use one. Passing only `<BlankForm>` makes the submission type `BlankForm` too.
 
-`useFormContext()` cannot infer types from its parent `FormProvider`. If editing and submission types differ, use `useFormContext<BlankFormSchema, unknown, FormSchema>()`, or define a reusable hook from your form hook's return type:
+`useFormContext()` cannot infer types from its parent `FormProvider`. If editing and submission types differ, use `useFormContext<BlankForm, unknown, ValidForm>()`, or define a reusable hook from your form hook's return type:
 
 ```ts
 // caterer-form-context.ts
@@ -211,7 +211,7 @@ export const useCatererFormContext: () => ReturnType<typeof useCatererForm> =
   useFormContext;
 ```
 
-Nested components can then call `useCatererFormContext()` under the matching `FormProvider`, without generics. When editing and submission types are the same, `useFormContext<FormSchema>()` is enough, as in the getting-started example.
+Nested components can then call `useCatererFormContext()` under the matching `FormProvider`, without generics. When editing and submission types are the same, `useFormContext<ValidForm>()` is enough, as in the getting-started example.
 
 ## Pruning values outside a form
 
@@ -220,9 +220,9 @@ For drafts or autosave, pass values directly to `pruneHiddenFields()`:
 ```ts
 // prune-draft.ts
 import { pruneHiddenFields } from 'rhf-conditional-logic';
-import { FormSchema, conditions } from './form-schema';
+import { ValidForm, conditions } from './form-schema';
 
-const draft: FormSchema = {
+const draft: ValidForm = {
   caterer: 'Delta BBQ',
   otherCaterer: 'A previous selection',
   guests: [{ age: 12, wine: 'White' }],
