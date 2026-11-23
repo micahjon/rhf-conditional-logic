@@ -15,8 +15,8 @@ Support modern RHF resolver types with either Zod 3 or Zod 4 ([micahjon/rhf-cond
 
 - `pruneHiddenFields(values, conditions)` accepts a plain values object, in addition to RHF's getter, for nonmutating draft/autosave pruning.
 - Improve performance when pruning many hidden fields and matching wildcard conditions, and reduce type-checking work for large nested forms.
-- Fix pre-registration/reset validation to use RHF's resolver snapshot, without discarding parsed defaults or transforms. Absent targets are skipped, and internal guard reads no longer become watched UI dependencies.
-- **Breaking:** whole-array-item condition targets (`guests.#`, `guests.0`) are rejected; use `useFieldArray().remove(index)` for row removal. Within-row conditions and whole-row dependency reads remain supported. Form roots must be objects with named array fields, not arrays themselves.
+- Fix pre-registration/reset validation to use RHF's resolver snapshot, without discarding parsed defaults or transforms. Absent targets are skipped.
+- Clarify that conditions target fields within array rows, not entire items (`guests.#`, `guests.0`); use `useFieldArray().remove(index)` for row removal. Whole-row dependency reads remain supported. Form roots must be objects with named array fields, not arrays themselves.
 
 ## [0.1.2] - 2024-10-12
 

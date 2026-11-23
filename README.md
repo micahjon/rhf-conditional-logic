@@ -169,7 +169,7 @@ _Curious about the backstory of this library? Check out my article on [Type-Safe
 
 ## Input and output types
 
-If a resolver produces a different type from the editing values, use `useConditionalForm<Input, Context, Output>()`. Defaults, conditions and `getValues()` use **Input**; successful submission callbacks receive **Output**. For example, a selection can start at null while editing but be required on submission:
+Like RHF, `useConditionalForm()` distinguishes editing **Input** from parsed **Output**. Defaults, conditions and `getValues()` use input; successful submission callbacks receive output. These types can often be inferred from your resolver and typed defaults. For example, a selection can start at null while editing but be required on submission:
 
 ```ts
 // nullable-form.ts
@@ -183,19 +183,39 @@ const selection = z.enum(['Elephants Catering', 'Delta BBQ', 'Other'], {
 const schema = z.object({ caterer: selection.nullable().pipe(selection) });
 type Input = z.input<typeof schema>; // caterer can be null
 type Output = z.output<typeof schema>; // caterer cannot be null
+const defaultValues: Input = { caterer: null };
 
 export function useCatererForm() {
-  return useConditionalForm<Input, unknown, Output>({
+  return useConditionalForm({
     conditions: {},
     resolver: zodResolver(schema),
-    defaultValues: { caterer: null },
+    defaultValues,
   });
 }
 ```
 
-Use `FieldConditions<Input>` and the same three generics in `useFormContext<Input, Context, Output>()` for nested components. Passing only `<Input>` defaults output to input. The pipe above is for simple enums; do not apply a transforming schema twice.
+Use `FieldConditions<Input>` for conditions. The pipe above is for simple enums; do not apply a transforming schema twice.
 
 With resolver `raw: true`, validation still runs but submission receives pruned input, not parsed output. Leave output equal to input in that mode.
+
+### Generics and form context
+
+You don't need explicit generics when the resolver and defaults provide enough type information, as above. Annotating `defaultValues: Input` avoids inferring a nullable field as only `null`; `satisfies Input` checks the value but does not widen it.
+
+When inference isn't sufficient, pass `useConditionalForm<Input, Context, Output>(...)`, using `unknown` if you don't use resolver context. Passing only `<Input>` defaults output to input rather than inferring it from the resolver.
+
+`useFormContext()` cannot infer types from its parent `FormProvider`. If input and output differ, use `useFormContext<Input, Context, Output>()`, or define a form-specific hook that reuses the inferred form type:
+
+```ts
+// caterer-form-context.ts
+import { useFormContext } from 'react-hook-form';
+import { useCatererForm } from './nullable-form';
+
+export const useCatererFormContext: () => ReturnType<typeof useCatererForm> =
+  useFormContext;
+```
+
+Nested components can then call `useCatererFormContext()` without generics. They must still be under the matching `FormProvider`; the type annotation does not check the provider relationship. When input and output are the same, `useFormContext<FormSchema>()` is sufficient, as in the getting-started example.
 
 ## Pruning values outside a form
 
