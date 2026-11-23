@@ -1,6 +1,11 @@
 import { get } from 'lodash-es';
+import { UseFormGetValues } from 'react-hook-form';
 import { afterAll, describe, expect, it, test, vi } from 'vitest';
-import { getConditionalLogic as gcl } from '../src/utils/conditional-logic';
+import { FieldConditions } from '../src';
+import {
+  getConditionalLogic as gcl,
+  getConditionalLogicWithDependencies,
+} from '../src/utils/conditional-logic';
 
 const formValues = {
   contactName: 'Micah',
@@ -72,6 +77,108 @@ test('Referencing parent in different lineage', () => {
   expect(
     gcl(['guests.1.bottles.0.isSmudgedByFirstGuest'], conditions, getValues)
   ).toStrictEqual([false]);
+});
+
+test('Tracks concrete dependencies for wildcard lookups of multiple fields', () => {
+  const typedGetValues: UseFormGetValues<typeof formValues> = getValues;
+  const conditions = {
+    'guests.#.bottles.#.isSmudgedByThisGuest': getValues => {
+      const [hasGloves, sips] = getValues([
+        'guests.#.hasGloves',
+        'guests.#.bottles.#.sips',
+      ]);
+      return !hasGloves && typeof sips === 'number' && sips > 0;
+    },
+  } satisfies FieldConditions<typeof formValues>;
+  const result = getConditionalLogicWithDependencies(
+    ['guests.1.bottles.0.isSmudgedByThisGuest'],
+    conditions,
+    typedGetValues
+  );
+  expect(result.formFieldVisibility).toStrictEqual([true]);
+  expect([...result.dependencies]).toStrictEqual([
+    'guests.1.hasGloves',
+    'guests.1.bottles.0.sips',
+  ]);
+});
+
+test.each([false, true])(
+  'tracks only condition reads for numeric object keys (reads parent: %s)',
+  readsParent => {
+    const values = { flag: true, codes: { '0': 'keep' } };
+    const getValues = ((paths: string | readonly string[]) =>
+      Array.isArray(paths)
+        ? paths.map(path => get(values, path))
+        : get(values, paths)) as UseFormGetValues<typeof values>;
+    const conditions = {
+      'codes.0': getValues =>
+        readsParent
+          ? getValues('codes')['0'] === 'keep' && getValues('flag')
+          : getValues('flag'),
+    } satisfies FieldConditions<typeof values>;
+    const result = getConditionalLogicWithDependencies(
+      ['codes.0'],
+      conditions,
+      getValues
+    );
+    expect(result.formFieldVisibility).toStrictEqual([true]);
+    expect([...result.dependencies]).toStrictEqual(
+      readsParent ? ['codes', 'flag'] : ['flag']
+    );
+  }
+);
+
+test('rejects numeric array-item targets without evaluating their conditions', () => {
+  const values = { codes: ['keep'], flag: true };
+  const getValues = ((paths: string | readonly string[]) =>
+    Array.isArray(paths)
+      ? paths.map(path => get(values, path))
+      : get(values, paths)) as UseFormGetValues<typeof values>;
+  const condition = vi.fn(() => true);
+  expect(() =>
+    getConditionalLogicWithDependencies(
+      // @ts-expect-error exercise an invalid JavaScript condition target
+      ['codes.0'],
+      { 'codes.0': condition },
+      getValues
+    )
+  ).toThrow('Conditions cannot target entire array items');
+  expect(condition).not.toHaveBeenCalled();
+});
+
+test('still evaluates visibility for an absent target', () => {
+  const values: { count: string; note?: string } = { count: 'shown' };
+  const getValues = ((path: string) => get(values, path)) as UseFormGetValues<
+    typeof values
+  >;
+  const condition = vi.fn(() => true);
+  const result = getConditionalLogicWithDependencies(
+    ['note'],
+    { note: condition },
+    getValues
+  );
+  expect(result.formFieldVisibility).toStrictEqual([true]);
+  expect(condition).toHaveBeenCalledOnce();
+});
+
+test('keeps exact precedence and first wildcard match across evaluations', () => {
+  const values = { rows: [{ notes: [{ detail: 'value' }] }] };
+  const getValues = ((path: string) => get(values, path)) as UseFormGetValues<
+    typeof values
+  >;
+  const wildcards = {
+    'rows.#.notes.#.detail': (): boolean => false,
+    'rows.0.notes.#.detail': () => true,
+  } satisfies FieldConditions<typeof values>;
+  const conditions = {
+    ...wildcards,
+    'rows.0.notes.0.detail': () => true,
+  } satisfies FieldConditions<typeof values>;
+  const paths = ['rows.0.notes.0.detail'] as const;
+  expect(gcl(paths, conditions, getValues)).toStrictEqual([true]);
+  expect(gcl(paths, wildcards, getValues)).toStrictEqual([false]);
+  wildcards['rows.#.notes.#.detail'] = () => true;
+  expect(gcl(paths, wildcards, getValues)).toStrictEqual([true]);
 });
 
 describe('mocking console.warn...', () => {

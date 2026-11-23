@@ -1,4 +1,10 @@
-import { FieldPath, FieldValues, UseFormGetValues } from 'react-hook-form';
+import {
+  FieldPath,
+  FieldPathValue,
+  FieldPathValues,
+  FieldValues,
+  UseFormGetValues,
+} from 'react-hook-form';
 import { objectKeys } from 'ts-extras';
 import {
   FieldConditionPath,
@@ -6,11 +12,38 @@ import {
   FieldPathPlusHash,
   GetValues,
 } from '../types';
-import { hashIndexRegex, integerIndexRegex } from './regex';
+import { hashIndexRegex, integerIndexRegex, integerRegex } from './regex';
 import {
   getConditionKeyWithHashThatMatchesPath,
   swapOutHashesInFieldPath,
 } from './field-name-paths';
+
+export function assertValidConditionTargets<TFieldValues extends FieldValues>(
+  formFieldPaths: readonly string[],
+  conditionKeys: readonly string[],
+  getUntrackedValues: GetValues<TFieldValues>
+) {
+  // Numeric keys can also be object properties, so inspect the parent.
+  const arrayItemTarget =
+    conditionKeys.find(key => key.endsWith('.#')) ??
+    formFieldPaths.find(path => {
+      const separator = path.lastIndexOf('.');
+      return (
+        separator >= 0 &&
+        integerRegex.test(path.slice(separator + 1)) &&
+        Array.isArray(
+          getUntrackedValues(
+            path.slice(0, separator) as FieldPathPlusHash<TFieldValues>
+          )
+        )
+      );
+    });
+  if (arrayItemTarget) {
+    throw new Error(
+      `Conditions cannot target entire array items ("${arrayItemTarget}"). Target a field within the item or remove the row with useFieldArray().`
+    );
+  }
+}
 
 // Utility to compute conditional logic for one or more fields and track dependencies
 export function getConditionalLogicWithDependencies<
@@ -22,31 +55,36 @@ export function getConditionalLogicWithDependencies<
   conditions: TFieldConditions,
   getValues: UseFormGetValues<TFieldValues>
 ) {
+  assertValidConditionTargets(formFieldPaths, objectKeys(conditions), getValues);
   // Whenever a user looks up a value in a conditional logic function, we track
-  // its field name as a depedency of the conditional field
+  // its field name as a dependency of the conditional field
   const dependencies: Set<FieldPath<TFieldValues>> = new Set();
-  function getDependencyValue<
-    TFieldName extends FieldPath<TFieldValues>,
-    TFieldNames extends FieldPath<TFieldValues>[],
-  >(fieldOrFields: TFieldName | readonly [...TFieldNames]) {
+  function getDependencyValue<TFieldName extends FieldPath<TFieldValues>>(
+    field: TFieldName
+  ): FieldPathValue<TFieldValues, TFieldName>;
+  function getDependencyValue<TFieldNames extends FieldPath<TFieldValues>[]>(
+    fields: readonly [...TFieldNames]
+  ): [...FieldPathValues<TFieldValues, TFieldNames>];
+  function getDependencyValue(
+    fieldOrFields: FieldPath<TFieldValues> | readonly FieldPath<TFieldValues>[]
+  ) {
     if (!fieldOrFields) {
       throw new Error('Please pass getValues a field name or array of field names');
     }
-    if (Array.isArray(fieldOrFields)) {
-      for (const field of fieldOrFields) {
-        dependencies.add(field);
-      }
-    } else {
-      dependencies.add(fieldOrFields as TFieldName);
+    if (typeof fieldOrFields === 'string') {
+      dependencies.add(fieldOrFields);
+      return getValues(fieldOrFields);
     }
-    // @ts-expect-error Unfortunately not sure why this type isn't lining up :(
+    for (const field of fieldOrFields) {
+      dependencies.add(field);
+    }
     return getValues(fieldOrFields);
   }
 
   // For each field the user requested, determine whether it should be visible (and
   // included in form data) or not. As we evaluate these conditions, we track
-  // depedencies
-  const formFieldVisibility = getConditionalLogic(
+  // dependencies
+  const formFieldVisibility = evaluateConditionalLogic(
     formFieldPaths,
     conditions,
     getDependencyValue
@@ -67,17 +105,38 @@ export function getConditionalLogic<
   conditions: TFieldConditions,
   getValues: GetValues<TFieldValues>
 ) {
-  // All condition keys that are generic (have # to match any index)
-  const conditionKeysWithHashes = objectKeys(conditions).filter(key =>
-    hashIndexRegex.test(key)
-  ) as (keyof TFieldConditions & string)[];
+  assertValidConditionTargets(formFieldPaths, objectKeys(conditions), getValues);
+  return evaluateConditionalLogic(formFieldPaths, conditions, getValues) as {
+    [Index in keyof TFieldNamesParam]: boolean;
+  };
+}
+
+/**
+ * Return visibility flags in the same order as the requested concrete field paths.
+ * Exact conditions take precedence over wildcard conditions; this does not prune values.
+ * Condition reads use getValues so callers can track dependencies. Callers validate
+ * targets first with an untracked getter, so guards never become UI dependencies.
+ */
+export function evaluateConditionalLogic<
+  TFieldValues extends FieldValues,
+  TFieldConditions extends FieldConditions<TFieldValues>,
+>(
+  formFieldPaths: readonly string[],
+  conditions: TFieldConditions,
+  getValues: GetValues<TFieldValues>
+): readonly boolean[] {
+  // Prepare wildcard segments once, and only if an exact condition wasn't found.
+  let conditionKeysWithHashes: { key: string; parts: string[] }[] | undefined;
 
   return formFieldPaths.map((path): boolean => {
     if (path in conditions) {
       // Found condition matching this field exactly
       return conditions[path as keyof typeof conditions]!(getValues);
     }
-    if (conditionKeysWithHashes.length && integerIndexRegex.test(path)) {
+    if (integerIndexRegex.test(path)) {
+      conditionKeysWithHashes ??= objectKeys(conditions)
+        .filter(key => hashIndexRegex.test(key))
+        .map(key => ({ key, parts: key.split('.') }));
       const conditionKey = getConditionKeyWithHashThatMatchesPath(
         path,
         conditionKeysWithHashes
@@ -107,5 +166,5 @@ export function getConditionalLogic<
     // but show the developer a warning. They should already have a type error.
     console.warn(`Missing RHF conditional logic for "${path}"`);
     return true;
-  }) as { [Index in keyof TFieldNamesParam]: boolean };
+  });
 }

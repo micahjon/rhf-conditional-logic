@@ -9,14 +9,20 @@ export function getConditionKeyWithHashThatMatchesPath<
   TFieldName extends FieldPath<TFieldValues>,
 >(
   pathWithIndices: TFieldName,
-  conditionKeysWithHashes: FieldPathPlusHash<TFieldValues>[]
+  conditionKeysWithHashes: readonly {
+    key: FieldPathPlusHash<TFieldValues>;
+    parts: readonly string[];
+  }[]
 ) {
   const pathParts = pathWithIndices.split('.');
-  // If path has a numberic index, attempt to find a condition with a
+  // If path has a numeric index, attempt to find a condition with a
   // wildcard "#" hash index
   // This is used to allow a single condition to match multiple indices
   // e.g. the same condition for every object in the array
-  for (const conditionKey of conditionKeysWithHashes) {
+  for (const {
+    key: conditionKey,
+    parts: conditionKeyParts,
+  } of conditionKeysWithHashes) {
     // For instance:
     //   path = "guest.0.name"
     //   conditionKey = "guest.#.name"
@@ -29,7 +35,6 @@ export function getConditionKeyWithHashThatMatchesPath<
     //   (target all cats in the first house only)
 
     // Bail if the number of path segments are different
-    const conditionKeyParts = conditionKey.split('.');
     if (pathParts.length !== conditionKeyParts.length) continue;
 
     // Check to see if the field names & indices & hashes all line up as expected
@@ -63,7 +68,7 @@ export function swapOutHashesInFieldPath<
 >(requestedFieldPath: TFieldNameWithHash, conditionalFieldPath: TConditionPath) {
   // No hashes to replace with indices
   if (!hashIndexRegex.test(requestedFieldPath)) {
-    return requestedFieldPath as FieldPath<TFieldValues>;
+    return requestedFieldPath;
   }
 
   const conditionalFieldPathParts = conditionalFieldPath.split('.');

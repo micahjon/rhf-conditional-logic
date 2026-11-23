@@ -1,7 +1,7 @@
 {
   "name": "rhf-conditional-logic",
   "description": "Conditional Logic for React Hook Forms. Fully typed and compatible with resolvers (e.g. Zod)",
-  "version": "0.1.2",
+  "version": "0.2.0-beta.0",
   "main": "./dist/rhf-conditional-logic.cjs",
   "module": "./dist/rhf-conditional-logic.mjs",
   "exports": {
@@ -23,29 +23,33 @@
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
     "test:unit": "vitest --config ./tests-unit/vitest.config.ts",
+    "test:types": "tsc --noEmit -p tsconfig.types.json",
     "lint:scripts": "eslint . --ext .ts",
     "format:scripts": "prettier . --write",
-    "pub": "npm run build && npm publish"
+    "pub": "node ./scripts/check-stable-version.mjs && npm run build && npm publish --tag latest",
+    "pub:beta": "npm run build && npm publish --tag beta"
   },
   "dependencies": {
     "ts-extras": "^0.11.0"
   },
   "peerDependencies": {
-    "react-hook-form": "^7.0.0"
+    "react-hook-form": "^7.55.0"
   },
   "devDependencies": {
-    "@hookform/resolvers": "^3.1.1",
-    "@playwright/test": "^1.39.0",
+    "@hookform/resolvers": "^7.0.7",
+    "@playwright/test": "^1.61.1",
     "@types/jsdom": "^21.1.1",
     "@types/lodash-es": "^4.17.10",
     "@types/node": "^20.4.9",
     "@types/react": "^18.2.31",
+    "@types/react-dom": "^18.3.7",
     "@typescript-eslint/eslint-plugin": "^6.3.0",
     "@typescript-eslint/parser": "^6.3.0",
     "dts-bundle-generator": "^8.0.1",
     "eslint": "^8.46.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
+    "jsdom": "^26.1.0",
     "lint-staged": "^13.2.3",
     "lodash-es": "^4.17.21",
     "postcss": "^8.4.27",
@@ -53,12 +57,12 @@
     "prettier": "^3.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-hook-form": "^7.47.0",
+    "react-hook-form": "^7.92.0",
     "rimraf": "^5.0.1",
     "ts-node": "^10.9.1",
     "typescript": "5.5",
     "vite": "^4.4.9",
     "vitest": "^0.34.6",
-    "zod": "^3.22.4"
+    "zod": "^4.6.7"
   }
 }

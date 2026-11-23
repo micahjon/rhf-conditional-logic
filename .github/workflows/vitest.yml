@@ -6,14 +6,36 @@ on:
     branches: [main]
 jobs:
   test:
-    timeout-minutes: 2
+    timeout-minutes: 5
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rhf: 7.55.0
+            resolvers: 5.2.2
+            zod: 3.25.76
+          - rhf: 7.55.0
+            resolvers: 5.2.2
+            zod: 4.0.17
+          - rhf: 7.92.0
+            resolvers: 7.0.7
+            zod: 3.25.76
+          - rhf: 7.92.0
+            resolvers: 7.0.7
+            zod: 4.6.7
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
       - name: Install dependencies
         run: npm ci
+      - name: Select compatibility versions
+        run: npm install --no-save react-hook-form@${{ matrix.rhf }} @hookform/resolvers@${{ matrix.resolvers }} zod@${{ matrix.zod }}
+      - name: Type-check library and tests
+        run: npm run test:types
       - name: Run unit tests
-        run: npm run test:unit
+        run: npm run test:unit -- run
+      - name: Build package and declarations
+        run: npm run build

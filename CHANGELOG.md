@@ -1,5 +1,23 @@
 # Changelog / Releases
 
+## [Unreleased]
+
+### Modern React Hook Form and Zod compatibility
+
+Support modern RHF resolver types with either Zod 3 or Zod 4 ([micahjon/rhf-conditional-logic#9](https://github.com/micahjon/rhf-conditional-logic/issues/9)).
+
+- **Breaking:** `react-hook-form` peer dependency is now `^7.55.0` (was `^7.0.0`).
+- `useConditionalForm<Input, Context, Output>()` and `useCondition()` preserve RHF's separate types for form values and validated submissions. Existing single-generic forms still default output to input.
+- With modern resolvers, form values must match the schema's input type. The README and demo show nullable form values with nonnullable submission output.
+- Conditional path values follow the installed RHF version, including optional-parent and array-item types. Compatibility is tested across RHF 7.55/7.92 and Zod 3/4.
+
+### Smaller improvements
+
+- `pruneHiddenFields(values, conditions)` accepts a plain values object, in addition to RHF's getter, for nonmutating draft/autosave pruning.
+- Improve performance when pruning many hidden fields and matching wildcard conditions, and reduce type-checking work for large nested forms.
+- Fix pre-registration/reset validation to use RHF's resolver snapshot, without discarding parsed defaults or transforms. Absent targets are skipped.
+- Clarify that conditions target fields within array rows, not entire items (`guests.#`, `guests.0`); use `useFieldArray().remove(index)` for row removal. Whole-row dependency reads remain supported. Form roots must be objects with named array fields, not arrays themselves.
+
 ## [0.1.2] - 2024-10-12
 
 - Improve type-safety of `useCondition([...paths], conditions, getValues, control)` hook by narrowing `paths` to only field paths associated with `conditions`, not any field path associated with the form.
