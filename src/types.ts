@@ -180,17 +180,6 @@ export type PathValueCL<T, P extends PathCL<T> | ArrayPath<T>> = PathValue<
 >;
 
 //
-//
-// -------------------------- RHF-derived helpers ----------------------------------
-//
-// These helpers come from React Hook Form's path types. The CL variants below
-// have the noted modifications; the other helpers retain RHF's behavior.
-//
-// ----------------------------------------------------------------------------------
-//
-//
-
-//
 // Copied from src/types/utils.ts
 //
 
