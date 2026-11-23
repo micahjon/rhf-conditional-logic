@@ -162,6 +162,7 @@ export function pruneHiddenFields<
 
   const conditionResults = evaluateConditionalLogic(fieldPaths, conditions, getValues);
 
+  // Remove hidden values after all conditions have read the original snapshot.
   const hiddenPaths = fieldPaths.filter(
     (_, index) => conditionResults[index] === false
   );

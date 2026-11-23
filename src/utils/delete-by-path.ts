@@ -1,12 +1,5 @@
-// Delete a field from an object by its path, e.g. "a.b"
+// Delete fields from an object by their paths, e.g. ["a.b", "a.c"]
 // without mutating said object
-export function deleteByPathWithoutMutation(
-  object: Record<string, unknown>,
-  path: string
-): Record<string, unknown> {
-  return deleteByPathsWithoutMutation(object, [path]);
-}
-
 export function deleteByPathsWithoutMutation(
   object: Record<string, unknown>,
   paths: readonly string[]
@@ -16,34 +9,37 @@ export function deleteByPathsWithoutMutation(
   const copies = new WeakSet<object>();
 
   paths: for (const path of paths) {
-    const keys = path.split('.');
-    const lastKey = keys.pop();
+    // Recurse into object until we're at the right level
+    const keysToRecurse = path.split('.');
+    const lastKey = keysToRecurse.pop();
     if (!lastKey) continue;
 
-    let parent = result;
-    for (const key of keys) {
-      const child = parent[key];
+    // Find the object to delete from before cloning anything.
+    let objectToDeleteFrom = result;
+    for (const key of keysToRecurse) {
+      const child = objectToDeleteFrom[key];
       if (!isObject(child)) continue paths;
-      parent = child;
+      objectToDeleteFrom = child;
     }
 
     if (result === object) {
       result = { ...object };
       copies.add(result);
     }
-    parent = result;
-    for (const key of keys) {
-      const child = parent[key];
+    // Recurse down again, updating references to copied objects along the way.
+    let objectToUpdate = result;
+    for (const key of keysToRecurse) {
+      const child = objectToUpdate[key];
       if (!isObject(child)) continue paths;
       if (!copies.has(child)) {
         const copy = Array.isArray(child) ? [...child] : { ...child };
-        parent[key] = copy;
+        objectToUpdate[key] = copy;
         copies.add(copy);
       }
-      parent = parent[key] as Record<string, unknown>;
+      objectToUpdate = objectToUpdate[key] as Record<string, unknown>;
     }
 
-    delete parent[lastKey];
+    delete objectToUpdate[lastKey];
   }
   return result;
 }
